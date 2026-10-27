@@ -1,8 +1,27 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.*
+
+# Next.js build output
+.next/
+out/
+
+# Environment variables (never commit secrets)
+.env
+.env.local
+.env.*.local
+
+# Logs / debug
+*.log
+npm-debug.log*
+
 # OS / editor files
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
 
-# Logs
-*.log
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
