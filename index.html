@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Campora — Your Campus, Connected</title>
+  <meta name="description" content="Campora is a campus-based social platform where college students share updates, photos, and college event information. Work in progress." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="navbar">
+    <div class="nav-inner">
+      <a class="brand" href="#">
+        <span class="brand-mark">C</span>
+        <span class="brand-name">Campora</span>
+      </a>
+      <nav class="nav-links" aria-label="Main navigation">
+        <a href="#feed" class="active">Home</a>
+        <a href="#feed">Feed</a>
+        <a href="#events">Events</a>
+        <a href="#about">About</a>
+      </nav>
+      <span class="wip-badge">Work in Progress</span>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>Your campus, in one feed.</h1>
+    <p>Share daily campus moments, catch up on what friends are posting, and never miss a college event again.</p>
+  </section>
+
+  <main class="layout">
+    <section class="main-column">
+      <!-- Post composer -->
+      <div class="card composer" aria-label="Create a post">
+        <div class="composer-row">
+          <span class="avatar avatar-you">You</span>
+          <textarea id="postInput" rows="2" placeholder="Share something about campus today..." aria-label="Write a post"></textarea>
+        </div>
+        <div class="composer-actions">
+          <span class="hint">Demo only — posts stay on this page.</span>
+          <button id="postBtn" class="btn-primary" type="button">Post</button>
+        </div>
+      </div>
+
+      <!-- Feed -->
+      <div id="feed" class="feed" aria-label="Campus feed"></div>
+    </section>
+
+    <!-- Events sidebar -->
+    <aside id="events" class="sidebar" aria-label="Campus events">
+      <div class="card">
+        <h2 class="card-title">Upcoming on Campus</h2>
+        <ul id="eventList" class="event-list"></ul>
+        <p class="hint">Sample events for demonstration.</p>
+      </div>
+
+      <div id="about" class="card about-card">
+        <h2 class="card-title">About Campora</h2>
+        <p>Campora is an early-stage personal project — a social platform built only for college campuses. This page is a static prototype with sample data. Accounts, a backend, and photo uploads are planned, not built yet.</p>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="footer">
+    <p>Campora — Work in Progress · Built by Arvind Kushwaha</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
