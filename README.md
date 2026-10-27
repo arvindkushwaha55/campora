@@ -1,76 +1,111 @@
 # Campora
 
-> **Status: Work in Progress** — Early-stage personal project. The current version is a static frontend prototype with sample data only.
+**Your campus, in one feed.**
 
-## Overview
+Campora is a campus-based social media web app for college students — a place to share
+campus updates and photos, follow what is happening around the college, and keep up with
+events. It is a personal learning project, built step by step.
 
-Campora is a campus-based social media web app for college students. It is designed to help students share photos and daily campus updates, and stay informed about college events, activities, and happenings — all in one place, focused only on their campus.
+> **Status: Work in Progress.** The interface and core interactions below are implemented
+> and working. There is no real backend, login, or database yet — see
+> [What is implemented vs planned](#what-is-implemented-vs-planned).
 
-## Purpose
+**Live demo:** https://arvindkushwaha55.github.io/campora/
 
-College updates are usually scattered across notice boards, group chats, and different social apps. Campora explores a single, campus-focused feed where students can:
+## Tech stack
 
-- See what is happening around their campus
-- Share everyday moments and updates with fellow students
-- Discover college events and activities in time to join them
+| Part        | Technology                                   |
+| ----------- | -------------------------------------------- |
+| Framework   | Next.js 15 (App Router) + React 19           |
+| Language    | TypeScript                                   |
+| Styling     | Tailwind CSS v4                              |
+| Data (now)  | Sample data in the app + browser localStorage |
+| Data (next) | Supabase (auth + database) — planned         |
+| Hosting     | GitHub Pages (static export) · Vercel-ready  |
 
-## Current State
+## Features in this build
 
-What exists right now:
+- **App shell** — sidebar navigation on desktop, top bar + bottom navigation on mobile
+- **Campus feed** — sample posts with campus "spots" (Library, Canteen, Main Block,
+  Sports Ground, Auditorium, Hostel), sortable Latest / Popular, filterable by spot
+- **Post composer** — write a post, pick a spot, basic validation; your posts are saved
+  in the browser and survive a refresh
+- **Likes & comments** — like posts and discuss them; state persists on your device
+- **Events** — upcoming campus events with a details view and an "Interested" button
+- **Campus Pulse** — a small summary calculated live from the posts on the page
+  (clearly demo data, not real traffic)
+- **Profiles** — student profiles with their posts; follow/unfollow for sample profiles
+- **Search** — across posts, events and campus spots, with type filters
+- **Report** — report a post (stored locally for now; see limitations)
 
-- A clean, responsive homepage built with plain HTML, CSS, and JavaScript
-- Campora branding and a navigation bar
-- A campus social feed with sample posts
-- A basic post creation box (posts are added to the feed on the page only — nothing is saved)
-- A campus events section with sample event updates
+All sample posts, events, profiles and counts are **sample data for demonstration** —
+they are labelled as such inside the app.
 
-What does **not** exist yet:
-
-- No user accounts or authentication
-- No backend or database — all data is static sample data in the browser
-- No photo upload, comments system, or real-time updates
-
-## Planned Features
-
-- [ ] User profiles for students
-- [ ] Photo and post sharing
-- [ ] Campus event listings with dates and venues
-- [ ] Comments and reactions on posts
-- [ ] Backend and database for persistent data
-- [ ] Authentication for verified students
-
-These are plans, not completed features.
-
-## Tech Stack
-
-- HTML5
-- CSS3 (responsive layout, no framework)
-- Vanilla JavaScript
-
-No build tools or dependencies — just open the page in a browser.
-
-## Getting Started
+## Run it locally
 
 ```bash
-git clone <this-repo-url>
-cd campora
-# Open index.html in a browser, or serve it locally:
-python3 -m http.server 8000
-# Then visit http://localhost:8000
+npm install
+npm run dev
 ```
 
-## Project Structure
+Then open http://localhost:3000
+
+Production build (static export into `out/`):
+
+```bash
+npm run build
+```
+
+## What is implemented vs planned
+
+**Implemented (working today)**
+
+- Next.js + TypeScript + Tailwind project structure
+- Feed, composer, likes, comments, events, profiles, search, report UI
+- Demo persistence with `localStorage` through a small data layer (`src/lib/store.ts`),
+  so swapping in a real API later does not mean rewriting the screens
+- Static export build; deployed to GitHub Pages by a GitHub Actions workflow
+
+**Planned (not built yet)**
+
+- Supabase: real sign-up/login, database-backed posts/events, image uploads
+- Real moderation for reports, notifications, direct messages
+- Vercel deployment
+
+## Data & persistence — honestly
+
+There is **no server and no database** in this phase. Sample content lives in
+`src/lib/data.ts`. Anything you do (post, like, comment, follow, mark interested) is
+stored only in your own browser's `localStorage` on this device and can be cleared by
+the browser at any time. Nothing is sent anywhere.
+
+## Project structure
 
 ```
-campora/
-├── index.html   # Homepage — nav, feed, post composer, events
-├── styles.css   # All styling, responsive layout
-├── script.js    # Sample data rendering, like buttons, local post composer
-└── README.md
+src/
+  app/          layout + main page
+  components/   shell (sidebar/mobile nav), feed, panels (events, search, profiles)
+  lib/          data.ts (sample data), store.ts (localStorage data layer)
+legacy-static-v1/   the earlier plain HTML/CSS/JS prototype (kept for history)
+.github/workflows/  GitHub Pages deployment
 ```
+
+## Deployment
+
+**GitHub Pages (current):** pushes to `main` run `.github/workflows/deploy-pages.yml`,
+which builds the static export (with the `/campora` base path) and deploys it.
+
+**Vercel (optional, not set up yet):** import this repository in Vercel — it detects
+Next.js automatically. For a fully dynamic deployment later (once a backend exists),
+remove the static-export setting; no other code changes are expected. Do not commit
+real secrets — copy `.env.example` to `.env.local` for local Supabase keys.
 
 ## Author
 
-**Arvind Kushwaha** — B.Tech (AI & ML) student at Raj Kumar Goel Institute of Technology (RKGIT), Ghaziabad.
+Built by **Arvind Kushwaha** — B.Tech (AI & ML) student.
+GitHub: [@arvindkushwaha55](https://github.com/arvindkushwaha55)
 
-Campora is a personal learning project being built step by step alongside my studies.
+## Notes
+
+Campora is a learning project under active development. Feedback and ideas are welcome
+via GitHub issues.
