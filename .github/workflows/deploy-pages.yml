@@ -33,6 +33,12 @@ jobs:
         run: npm run build
         env:
           GITHUB_PAGES: "true"
+          # Public Supabase client credentials, stored as repository
+          # *Variables* (Settings -> Secrets and variables -> Actions ->
+          # Variables). They are safe for the browser; Row Level Security
+          # protects the data. Never store the service-role secret here.
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
