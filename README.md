@@ -1,113 +1,113 @@
-# Campora — Your Campus, Connected
+# Campora
 
-Campora is a simple **full-stack** campus social web app for college students.
-Students create an account with their name and college details, log in, share
-text posts (with an optional photo), and see everyone's posts in one campus
-feed. It is a beginner-friendly learning / mini project.
+> **Status: Work in Progress** — A personal mini project in active development. Campora is now a simple full-stack web app: real signup/login, student profiles, and posts stored in a database (Supabase). It is a learning project, not a production social network.
 
-- **Frontend:** Next.js 15 (App Router) + React 19 + TypeScript + Tailwind CSS v4, exported as a static site
-- **Backend:** [Supabase](https://supabase.com) — email/password authentication, PostgreSQL database, and file storage
-- **Deployment:** GitHub Pages (static export via GitHub Actions)
+**Live Demo:** https://arvindkushwaha55.github.io/campora/
+(The live demo only works once the Supabase environment variables below are configured for the deployment — see [Deployment](#deployment).)
 
-## Features
+## Overview
 
-- Sign up with full name, email, password, course (B.Tech / BCA / BBA / B.Pharmacy / Other), year (1st–4th / Other) and an optional profile picture
-- Log in / log out (Supabase Auth — no custom auth code)
-- Profile page: view and edit name, course, year and profile picture; see your own posts
-- View other students' profiles and their posts
-- Create posts: text (up to 1000 characters) with an optional image (max 5 MB)
-- Campus feed: everyone's posts, newest first, with author name, photo, course, year and date-time
-- Delete your own posts (with confirmation)
-- Security: Row Level Security (RLS) on every table and storage bucket — a user can only change their own profile, their own posts and their own files
+Campora is a campus-based social networking web app for college students. Students create an account with their name, course, and year of study; share text posts with an optional photo; and see a campus feed with posts from other registered students.
 
-Not included (kept simple on purpose): comments, likes, messaging, search,
-events and rankings.
+## Features (implemented)
 
-## Run it locally
+- **Accounts** — email + password signup, login, and logout (Supabase Auth). Signup collects full name, course (B.Tech / BCA / BBA / B.Pharmacy / Other), year of study (1st–4th / Other), and an optional profile picture.
+- **Profiles** — every user has a profile (photo, name, course, year). You can edit your own details and change your profile picture, and view other students' profiles.
+- **Posts** — write a text post (up to 1000 characters) with an optional image. Posts are stored in the database, so they survive refresh and logout/login.
+- **Campus feed** — posts from all registered users, newest first, with the author's name, profile picture, course/year, and the post's date and time.
+- **Delete your own posts** — including their uploaded image.
+- **Security** — Row Level Security (RLS) in the database: users can only edit their own profile, create posts as themselves, and delete their own posts. Uploaded files are stored in per-user folders with matching storage policies.
 
-You need Node.js 20+ and a free Supabase project.
+### Not built (out of scope for this version)
 
-### 1. Clone and install
+Comments, likes, direct messages, follow system, events, and real-time updates are intentionally not part of this version.
+
+## Tech Stack
+
+- **Next.js 15** (App Router) + **React 19**
+- **TypeScript**
+- **Tailwind CSS v4**
+- **Supabase** — authentication, Postgres database, and image storage
+- **Git + GitHub** for version control
+- Deployment: **GitHub Pages** (static export)
+
+## Getting Started
+
+### 1. Install
 
 ```bash
 git clone https://github.com/arvindkushwaha55/campora.git
 cd campora
-cp .env.example .env.local
 npm install
 ```
 
 ### 2. Create the Supabase project
 
-1. Go to [supabase.com](https://supabase.com) → New project (any name, e.g. "campora").
-2. Open **SQL Editor → New query**, paste the whole contents of
-   [`supabase/schema.sql`](supabase/schema.sql) and click **Run**. This creates
-   the `profiles` and `posts` tables, the signup trigger, all RLS policies and
-   the `avatars` + `post-images` storage buckets.
-3. (Recommended for local testing) **Authentication → Providers → Email** →
-   turn **OFF** "Confirm email" so new accounts can log in immediately.
-4. **Settings → API**: copy the **Project URL** and the **anon public** key.
+1. Go to [supabase.com](https://supabase.com) and create a free project (any name, e.g. `campora`).
+2. In the dashboard, open **SQL Editor → New query**, paste the entire contents of [`supabase/schema.sql`](supabase/schema.sql), and run it. This creates the `profiles` and `posts` tables, the RLS policies, the automatic profile-on-signup trigger, and the `avatars` + `post-images` storage buckets.
+3. Open **Authentication → Providers → Email** and turn **off** "Confirm email" (for this learning project, so users can log in immediately after signup).
+4. Open **Project Settings → API** and copy the **Project URL** and the **anon/public key**.
 
-### 3. Add the keys and start
+### 3. Configure environment variables
 
-Put the two values in `.env.local`:
+Copy `.env.example` to `.env.local` and fill in your values:
 
 ```bash
+cp .env.example .env.local
+```
+
+```
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-public-key
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-These are **public** client credentials — the anon key is designed for the
-browser, and Row Level Security protects the data. **Never** put the
-service-role key in the frontend.
+These two values are public client credentials (safe in the browser — RLS protects the data). **Never** commit `.env.local`, and never put the secret service-role key in the frontend.
+
+### 4. Run
 
 ```bash
-npm run dev        # http://localhost:3000
-npm run typecheck  # TypeScript check
+npm run dev
+# Open http://localhost:3000
+```
+
+Other commands:
+
+```bash
 npm run build      # production build (static export into out/)
+npm run typecheck  # TypeScript check without emitting files
 ```
 
-If the keys are missing, the app shows a friendly "not connected yet" screen
-instead of fake data.
+## Deployment
 
-## Deployment (GitHub Pages)
+- **GitHub Pages:** pushes to `main` run `.github/workflows/deploy-pages.yml`, which builds the static export and deploys it.
+- For the deployed site to connect to Supabase, add the two variables as repository **Variables** (not secrets — they are public): repo **Settings → Secrets and variables → Actions → Variables**:
+  - `NEXT_PUBLIC_SUPABASE_URL`
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- The workflow passes them into the build automatically.
 
-The workflow in `.github/workflows/deploy-pages.yml` builds the static export
-on every push to `main`. The build needs the two public keys as repository
-**Variables** (not Secrets):
-
-**Settings → Secrets and variables → Actions → Variables → New repository variable**
-
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-
-Then push to `main` (or re-run the "Deploy Campora to GitHub Pages" workflow).
-Live site: https://arvindkushwaha55.github.io/campora/
-
-## Project structure
+## Project Structure
 
 ```
-src/
-  app/            Pages: / (feed), /login, /signup, /profile
-  components/     Shell (nav), feed + composer + post card, shared UI helpers, icons
-  lib/
-    supabase.ts   Supabase client (from env vars)
-    auth.tsx      Session + profile context (useAuth)
-    constants.ts  Course/year lists, shared types and limits
-supabase/
-  schema.sql      Tables, RLS policies, signup trigger, storage buckets
-scripts/
-  verify_backend.py  End-to-end API checks: signup, RLS and storage rules
-                     (run: python3 scripts/verify_backend.py from a normal network)
+campora/
+├── src/
+│   ├── app/            # routes: / (feed), /login, /signup, /profile
+│   ├── components/     # shell (nav), feed (composer, post card), common (auth helpers)
+│   └── lib/            # supabase.ts (client), auth.tsx (session context), constants.ts
+├── supabase/
+│   └── schema.sql      # tables, RLS policies, storage buckets — run once in Supabase
+├── scripts/
+│   └── verify_backend.py  # API checks: signup, RLS and storage rules (see file header)
+├── .github/workflows/  # GitHub Pages deployment
+└── .env.example        # required environment variables (placeholders only)
 ```
 
-## Notes and limitations
+## Current Limitations
 
-- Static export: no server-side rendering; all data is fetched in the browser
-  from Supabase. This is why GitHub Pages hosting works.
-- Password reset by email is not wired into the UI yet (Supabase supports it;
-  adding a "forgot password" page is a good next step).
-- Demo/learning project: keep real personal data out of posts.
+- One shared campus feed for all users (no per-college separation yet)
+- No password-reset flow in the UI yet (passwords can be reset via Supabase if needed)
+- Email confirmation is disabled for simplicity in this learning project
+- Sample/demo accounts you create are real rows in your own Supabase project — delete them from the Supabase dashboard if you want a clean start
 
-## Status
+## Author
 
-Work in progress — built for learning and as a CV mini project.
+**Arvind Kushwaha** — B.Tech (AI & ML) student at Raj Kumar Goel Institute of Technology (RKGIT), Ghaziabad. Campora is a personal learning project being built step by step alongside my studies.
