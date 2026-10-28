@@ -1,18 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import type { ReactNode } from "react";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://arvindkushwaha55.github.io/campora/"),
   title: "Campora — Your Campus, Connected",
   description:
-    "Campora is a simple full-stack campus social app for college students: create an account, share posts and photos, and see what is happening around your campus.",
+    "Campora is a campus-based social platform where college students share updates, photos, and college event information. Work in progress.",
   openGraph: {
     title: "Campora — Your Campus, Connected",
     description:
-      "A simple campus social app for college students: accounts, profiles, posts and photos from your campus.",
-    type: "website",
+      "A campus-based social platform for college students — updates, events and campus life in one feed. Work in progress.",
+    url: "https://arvindkushwaha55.github.io/campora/",
     siteName: "Campora",
+    type: "website",
   },
 };
 
@@ -20,10 +21,10 @@ export const viewport: Viewport = {
   themeColor: "#fbcfe8",
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-[#fdf7f2] text-stone-900 antialiased">
+      <body>
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
