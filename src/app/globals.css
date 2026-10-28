@@ -26,3 +26,12 @@ body {
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* Gentle lift on cards when hovered */
+article {
+  transition: box-shadow 0.2s ease;
+}
+
+article:hover {
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
