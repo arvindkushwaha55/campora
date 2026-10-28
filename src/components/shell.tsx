@@ -14,7 +14,7 @@ const NAV: { key: View; label: string; Icon: typeof HomeIcon }[] = [
 export function Brand() {
   return (
     <span className="flex items-center gap-2.5">
-      <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-indigo-600 text-lg font-extrabold text-white">
+      <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-pink-200 text-lg font-extrabold text-rose-900"></span>
         C
       </span>
       <span className="text-[19px] font-extrabold tracking-tight text-slate-900">Campora</span>
