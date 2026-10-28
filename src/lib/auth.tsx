@@ -1,51 +1,51 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import type { Session } from "@supabase/supabase-js";
-import { getSupabase } from "./supabase";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
+import type { Session, User } from "@supabase/supabase-js";
+import { supabase } from "./supabase";
 import type { Profile } from "./constants";
 
-type AuthState = {
-  /** True while the first session check is still running. */
-  loading: boolean;
+interface AuthState {
+  user: User | null;
   session: Session | null;
-  /** The signed-in user's row from public.profiles (null until loaded). */
   profile: Profile | null;
-  /** Re-reads the profile row (call after editing the profile). */
+  loading: boolean;
   refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
-};
+}
 
 const AuthContext = createContext<AuthState>({
-  loading: true,
+  user: null,
   session: null,
   profile: null,
+  loading: true,
   refreshProfile: async () => {},
   signOut: async () => {},
 });
 
-export function useAuth() {
-  return useContext(AuthContext);
-}
-
-async function fetchProfile(userId: string): Promise<Profile | null> {
-  const supabase = getSupabase();
-  if (!supabase) return null;
-  const { data } = await supabase
-    .from("profiles")
-    .select("id, full_name, course, year, avatar_url, created_at")
-    .eq("id", userId)
-    .maybeSingle();
-  return (data as Profile | null) ?? null;
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadProfile = useCallback(async (userId: string) => {
+    if (!supabase) return;
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, full_name, course, year, avatar_url, created_at")
+      .eq("id", userId)
+      .single();
+    setProfile((data as Profile) ?? null);
+  }, []);
 
   useEffect(() => {
-    const supabase = getSupabase();
     if (!supabase) {
       setLoading(false);
       return;
@@ -55,37 +55,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(async ({ data }) => {
       if (!active) return;
       setSession(data.session);
-      setProfile(data.session ? await fetchProfile(data.session.user.id) : null);
-      if (active) setLoading(false);
-    });
-
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, next) => {
-      if (!active) return;
-      setSession(next);
-      setProfile(next ? await fetchProfile(next.user.id) : null);
+      if (data.session?.user) await loadProfile(data.session.user.id);
       setLoading(false);
     });
+
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      async (_event, newSession) => {
+        if (!active) return;
+        setSession(newSession);
+        if (newSession?.user) {
+          await loadProfile(newSession.user.id);
+        } else {
+          setProfile(null);
+        }
+        setLoading(false);
+      }
+    );
 
     return () => {
       active = false;
       listener.subscription.unsubscribe();
     };
-  }, []);
+  }, [loadProfile]);
 
-  const refreshProfile = async () => {
-    if (session) setProfile(await fetchProfile(session.user.id));
-  };
+  const refreshProfile = useCallback(async () => {
+    if (session?.user) await loadProfile(session.user.id);
+  }, [session, loadProfile]);
 
-  const signOut = async () => {
-    const supabase = getSupabase();
+  const signOut = useCallback(async () => {
     if (supabase) await supabase.auth.signOut();
     setSession(null);
     setProfile(null);
-  };
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ loading, session, profile, refreshProfile, signOut }}>
+    <AuthContext.Provider
+      value={{
+        user: session?.user ?? null,
+        session,
+        profile,
+        loading,
+        refreshProfile,
+        signOut,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
+}
+
+export function useAuth() {
+  return useContext(AuthContext);
 }
