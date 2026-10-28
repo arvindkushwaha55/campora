@@ -9,7 +9,7 @@ const COVER_STYLES: Record<string, string> = {
   library: "bg-indigo-100 text-indigo-800",
   robot: "bg-amber-100 text-amber-800",
   code: "bg-emerald-100 text-emerald-800",
-  food: "bg-orange-100 text-orange-800",
+  food: "bg-pink-100 text-pink-800",
   trophy: "bg-violet-100 text-violet-800",
 };
 
