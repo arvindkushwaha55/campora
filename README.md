@@ -1,107 +1,113 @@
-# Campora
+# Campora — Your Campus, Connected
 
-> **Status: Work in Progress** — A personal mini project in active development. The current version is a frontend application with clearly labelled sample data and browser-only persistence. There are no real accounts and no backend yet.
+Campora is a simple **full-stack** campus social web app for college students.
+Students create an account with their name and college details, log in, share
+text posts (with an optional photo), and see everyone's posts in one campus
+feed. It is a beginner-friendly learning / mini project.
 
-**Live Demo:** https://arvindkushwaha55.github.io/campora/
-
-## Overview
-
-Campora is a campus-based social networking web app for college students. Students can share campus life — daily updates, happenings, activities — and discover college events, all in one place dedicated to their campus instead of a general-purpose social network.
-
-## The Problem
-
-Campus updates today are scattered across notice boards, class group chats, and general social apps where they get buried. Campora explores one focused feed for a single college community: what is happening, where, and what is coming up.
+- **Frontend:** Next.js 15 (App Router) + React 19 + TypeScript + Tailwind CSS v4, exported as a static site
+- **Backend:** [Supabase](https://supabase.com) — email/password authentication, PostgreSQL database, and file storage
+- **Deployment:** GitHub Pages (static export via GitHub Actions)
 
 ## Features
 
-### Implemented (frontend, working in the live demo)
+- Sign up with full name, email, password, course (B.Tech / BCA / BBA / B.Pharmacy / Other), year (1st–4th / Other) and an optional profile picture
+- Log in / log out (Supabase Auth — no custom auth code)
+- Profile page: view and edit name, course, year and profile picture; see your own posts
+- View other students' profiles and their posts
+- Create posts: text (up to 1000 characters) with an optional image (max 5 MB)
+- Campus feed: everyone's posts, newest first, with author name, photo, course, year and date-time
+- Delete your own posts (with confirmation)
+- Security: Row Level Security (RLS) on every table and storage bucket — a user can only change their own profile, their own posts and their own files
 
-- **App shell** — sidebar navigation on desktop, compact top bar and bottom navigation on mobile, fully responsive
-- **Campus feed** — sample posts with author, course, timestamp, and campus location (spot); Latest / Popular sorting
-- **Campus Spots** — filter the feed by location: Library, Canteen, Main Block, Sports Ground, Auditorium, Hostel
-- **Create a post** — text composer with location selection, validation, and character limit; your posts are saved in your browser and stay after refresh
-- **Likes and comments** — like/unlike posts, open comment threads, and add comments (saved in your browser)
-- **Campus events** — sample events with date, time, location, and category; event details view; "Interested" marking (saved in your browser)
-- **Campus Pulse** — most liked post, most discussed post, next event, and most active spot, all calculated from the posts and events actually on the page
-- **Student profiles** — profile pages with bio, campus affiliation, and that student's posts (sample profiles are labelled as such)
-- **Search** — search across posts, events, and campus spots, with type filters
-- **Safety foundations** — report a post (saved on your device, hides the post for you) and delete your own posts
+Not included (kept simple on purpose): comments, likes, messaging, search,
+events and rankings.
 
-### Not built yet (planned)
+## Run it locally
 
-- Real accounts and authentication
-- A database / backend (Supabase is the planned choice) so posts are shared between users and devices
-- Photo uploads
-- Real moderation of reported content
-- Real-time updates
+You need Node.js 20+ and a free Supabase project.
 
-Nothing in the "planned" list is claimed as working anywhere in this project.
-
-## How Data Works Right Now
-
-Sample posts, events, and profiles live in `src/lib/data.ts` and are labelled "Sample" in the UI wherever practical. Everything you do — posting, liking, commenting, marking interest, reporting — is stored only in your browser's `localStorage` through the data layer in `src/lib/store.ts`. It never leaves your device, and other visitors see their own sample feed, not your posts. The store functions are written behind a small interface so the Supabase phase can replace them without rewriting the UI.
-
-## Tech Stack
-
-- **Next.js 15** (App Router) + **React 19**
-- **TypeScript**
-- **Tailwind CSS v4**
-- HTML5 / CSS3
-- **Git + GitHub** for version control
-- Deployment: **GitHub Pages** (static export, live now) · Vercel-ready (see below)
-- Planned: **Supabase** (database + auth) — not yet integrated; see `.env.example`
-
-## Getting Started
+### 1. Clone and install
 
 ```bash
 git clone https://github.com/arvindkushwaha55/campora.git
 cd campora
+cp .env.example .env.local
 npm install
-npm run dev
-# Open http://localhost:3000
 ```
 
-Other commands:
+### 2. Create the Supabase project
+
+1. Go to [supabase.com](https://supabase.com) → New project (any name, e.g. "campora").
+2. Open **SQL Editor → New query**, paste the whole contents of
+   [`supabase/schema.sql`](supabase/schema.sql) and click **Run**. This creates
+   the `profiles` and `posts` tables, the signup trigger, all RLS policies and
+   the `avatars` + `post-images` storage buckets.
+3. (Recommended for local testing) **Authentication → Providers → Email** →
+   turn **OFF** "Confirm email" so new accounts can log in immediately.
+4. **Settings → API**: copy the **Project URL** and the **anon public** key.
+
+### 3. Add the keys and start
+
+Put the two values in `.env.local`:
 
 ```bash
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-public-key
+```
+
+These are **public** client credentials — the anon key is designed for the
+browser, and Row Level Security protects the data. **Never** put the
+service-role key in the frontend.
+
+```bash
+npm run dev        # http://localhost:3000
+npm run typecheck  # TypeScript check
 npm run build      # production build (static export into out/)
-npm run typecheck  # TypeScript check without emitting files
 ```
 
-### Environment variables
+If the keys are missing, the app shows a friendly "not connected yet" screen
+instead of fake data.
 
-The current frontend needs **no** environment variables. `.env.example` lists the Supabase variables that a later backend phase will use; they are placeholders only and are not read by the current code. Never commit real secrets.
+## Deployment (GitHub Pages)
 
-## Deployment
+The workflow in `.github/workflows/deploy-pages.yml` builds the static export
+on every push to `main`. The build needs the two public keys as repository
+**Variables** (not Secrets):
 
-- **GitHub Pages (current):** every push to `main` runs `.github/workflows/deploy-pages.yml`, which builds the static export with the `/campora` base path and deploys it to the live demo URL above.
-- **Vercel (alternative):** import this repository in Vercel, keep the default Next.js settings, and deploy — no environment variables are required for the current version. (Not deployed there yet.)
+**Settings → Secrets and variables → Actions → Variables → New repository variable**
 
-## Project Structure
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+Then push to `main` (or re-run the "Deploy Campora to GitHub Pages" workflow).
+Live site: https://arvindkushwaha55.github.io/campora/
+
+## Project structure
 
 ```
-campora/
-├── src/
-│   ├── app/          # layout.tsx, page.tsx, globals.css (design tokens)
-│   ├── components/   # shell.tsx (nav), feed.tsx (composer, posts, comments),
-│   │                 # panels.tsx (events, Campus Pulse, profiles, event details)
-│   └── lib/          # data.ts (sample data + types), store.ts (data layer)
-├── .github/workflows/  # GitHub Pages deployment
-├── legacy-static-v1/   # the first plain HTML/CSS/JS prototype, kept for history
-└── .env.example        # placeholder variables for the future Supabase phase
+src/
+  app/            Pages: / (feed), /login, /signup, /profile
+  components/     Shell (nav), feed + composer + post card, shared UI helpers, icons
+  lib/
+    supabase.ts   Supabase client (from env vars)
+    auth.tsx      Session + profile context (useAuth)
+    constants.ts  Course/year lists, shared types and limits
+supabase/
+  schema.sql      Tables, RLS policies, signup trigger, storage buckets
+scripts/
+  verify_backend.py  End-to-end API checks: signup, RLS and storage rules
+                     (run: python3 scripts/verify_backend.py from a normal network)
 ```
 
-## Screenshots
+## Notes and limitations
 
-Screenshots will be added once the design settles. The live demo above always shows the current state.
+- Static export: no server-side rendering; all data is fetched in the browser
+  from Supabase. This is why GitHub Pages hosting works.
+- Password reset by email is not wired into the UI yet (Supabase supports it;
+  adding a "forgot password" page is a good next step).
+- Demo/learning project: keep real personal data out of posts.
 
-## Current Limitations
+## Status
 
-- Single-device demo: no accounts, no shared data between users
-- Sample content is fictional and labelled as such
-- Reports are stored locally only; there is no moderation system yet
-- No photo uploads yet
-
-## Author
-
-**Arvind Kushwaha** — B.Tech (AI & ML) student at Raj Kumar Goel Institute of Technology (RKGIT), Ghaziabad. Campora is a personal learning project being built step by step alongside my studies.
+Work in progress — built for learning and as a CV mini project.
