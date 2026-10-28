@@ -1,105 +1,129 @@
 "use client";
 
+import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useState, type FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
-import { fileExtension, getSupabase, isSupabaseConfigured } from "@/lib/supabase";
-import { COURSES, MAX_IMAGE_BYTES, YEARS, type Post, type Profile } from "@/lib/constants";
-import { AuthGate, LoadingScreen, NotConfigured, ProfileAvatarInput, inputCls, labelCls } from "@/components/common";
+import {
+  COURSES,
+  MAX_IMAGE_SIZE_BYTES,
+  YEARS,
+  type Post,
+  type Profile,
+} from "@/lib/constants";
+import { AppShell } from "@/components/shell";
+import { AuthGate, LoadingScreen, ProfileAvatarInput, inputClass, labelClass } from "@/components/common";
 import { PostCard } from "@/components/feed";
 import { ProfileAvatar } from "@/components/icons";
-import { AppShell } from "@/components/shell";
 
-export default function ProfilePage() {
-  return (
-    <Suspense fallback={<LoadingScreen />}>
-      <ProfileInner />
-    </Suspense>
-  );
-}
+const POST_SELECT =
+  "id, user_id, text, image_url, created_at, profiles(full_name, avatar_url, course, year)";
 
-function ProfileInner() {
-  const params = useSearchParams();
-  const otherId = params.get("id");
-  return (
-    <AppShell>
-      <AuthGate>{otherId ? <OtherProfile userId={otherId} /> : <OwnProfile />}</AuthGate>
-    </AppShell>
-  );
-}
-
-/** Fetches one user's posts (newest first) for the profile pages. */
-function useUserPosts(userId: string | null) {
+function PostsList({ userId }: { userId: string }) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    const supabase = getSupabase();
-    if (!supabase || !userId) {
-      setLoading(false);
-      return;
-    }
+    if (!supabase) return;
     const { data } = await supabase
       .from("posts")
-      .select("id, user_id, text, image_url, created_at, profiles(full_name, avatar_url)")
+      .select(POST_SELECT)
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
-    setPosts((data as Post[] | null) ?? []);
+    setPosts((data as unknown as Post[]) ?? []);
     setLoading(false);
   }, [userId]);
 
   useEffect(() => {
-    void load();
+    load();
   }, [load]);
 
-  return { posts, loading, reload: load };
-}
-
-function PostList({
-  posts,
-  loading,
-  emptyText,
-  onChanged,
-}: {
-  posts: Post[];
-  loading: boolean;
-  emptyText: string;
-  onChanged?: () => void;
-}) {
-  if (loading) return <p className="py-8 text-center text-sm text-stone-500">Loading posts…</p>;
-  if (posts.length === 0)
+  if (loading) return <LoadingScreen label="Loading posts" />;
+  if (posts.length === 0) {
     return (
-      <div className="rounded-3xl border border-dashed border-stone-300 bg-white/60 px-6 py-10 text-center">
-        <p className="text-sm font-medium text-stone-500">{emptyText}</p>
-      </div>
+      <p className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-8 text-center text-sm text-slate-500">
+        No posts yet.
+      </p>
     );
+  }
   return (
     <div className="flex flex-col gap-4">
       {posts.map((post) => (
-        <PostCard key={post.id} post={post} onDeleted={onChanged} />
+        <PostCard
+          key={post.id}
+          post={post}
+          onDeleted={(id) => setPosts((prev) => prev.filter((p) => p.id !== id))}
+        />
       ))}
     </div>
   );
 }
 
-function OwnProfile() {
-  const { profile, session, refreshProfile } = useAuth();
-  const router = useRouter();
-  const userId = session?.user.id ?? null;
-  const { posts, loading, reload } = useUserPosts(userId);
+function OtherProfile({ id }: { id: string }) {
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    (async () => {
+      if (!supabase) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, full_name, course, year, avatar_url, created_at")
+        .eq("id", id)
+        .single();
+      setProfile((data as Profile) ?? null);
+      setLoading(false);
+    })();
+  }, [id]);
+
+  if (loading) return <LoadingScreen label="Loading profile" />;
+  if (!profile) {
+    return (
+      <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center">
+        <p className="font-semibold text-slate-700">Profile not found</p>
+        <Link href="/" className="mt-2 inline-block text-sm font-semibold text-indigo-700 hover:underline">
+          Back to the feed
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Link href="/" className="self-start rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-sm font-semibold text-slate-600 hover:text-slate-900">
+        ← Back to feed
+      </Link>
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.05)]" aria-label={`${profile.full_name}'s profile`}>
+        <div className="flex items-center gap-4">
+          <ProfileAvatar name={profile.full_name} avatarUrl={profile.avatar_url} size="lg" />
+          <div className="min-w-0">
+            <h2 className="text-xl font-bold text-slate-900">{profile.full_name}</h2>
+            <p className="text-sm text-slate-500">
+              {profile.course} · {profile.year} year
+            </p>
+          </div>
+        </div>
+      </section>
+      <h3 className="text-lg font-bold text-slate-900">{profile.full_name.split(" ")[0]}&rsquo;s posts</h3>
+      <PostsList userId={profile.id} />
+    </div>
+  );
+}
+
+function MyProfile() {
+  const { user, profile, refreshProfile } = useAuth();
   const [editing, setEditing] = useState(false);
   const [fullName, setFullName] = useState("");
   const [course, setCourse] = useState<string>(COURSES[0]);
   const [year, setYear] = useState<string>(YEARS[0]);
   const [avatar, setAvatar] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState("");
   const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  if (!isSupabaseConfigured) return <NotConfigured />;
-  if (!profile)
-    return <p className="py-16 text-center text-sm text-stone-500">Loading your profile…</p>;
+  if (!profile || !user) return <LoadingScreen label="Loading your profile" />;
 
   function startEditing() {
     if (!profile) return;
@@ -107,138 +131,145 @@ function OwnProfile() {
     setCourse(profile.course);
     setYear(profile.year);
     setAvatar(null);
+    setAvatarPreview(profile.avatar_url ?? "");
     setError("");
+    setSaved(false);
     setEditing(true);
   }
 
-  async function onSave(e: FormEvent) {
-    e.preventDefault();
+  function pickAvatar(file: File | null) {
     setError("");
-    if (fullName.trim().length < 2) return setError("Please enter your full name.");
-    if (avatar) {
-      if (!avatar.type.startsWith("image/")) return setError("Profile picture must be an image file.");
-      if (avatar.size > MAX_IMAGE_BYTES) return setError("Profile picture must be smaller than 5 MB.");
+    if (!file) {
+      setAvatar(null);
+      setAvatarPreview(profile?.avatar_url ?? "");
+      return;
     }
-    const supabase = getSupabase();
-    if (!supabase || !profile) return;
-    setBusy(true);
+    if (!file.type.startsWith("image/")) {
+      setError("Profile picture must be an image file.");
+      return;
+    }
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      setError("Profile picture is too large — please keep it under 5 MB.");
+      return;
+    }
+    setAvatar(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  }
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!supabase || !user || !profile) return;
+    setError("");
+    setSaved(false);
+    const name = fullName.trim();
+    if (name.length < 2) {
+      setError("Please enter your full name.");
+      return;
+    }
+    setSaving(true);
     try {
       let avatarUrl = profile.avatar_url;
       if (avatar) {
-        const path = `${profile.id}/avatar.${fileExtension(avatar.name)}`;
+        const ext = avatar.name.split(".").pop() ?? "jpg";
+        const path = `${user.id}/avatar.${ext}`;
         const { error: uploadError } = await supabase.storage
           .from("avatars")
-          .upload(path, avatar, { upsert: true, contentType: avatar.type });
-        if (uploadError) throw new Error(`Profile picture upload failed: ${uploadError.message}`);
-        const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-        // Cache-bust so the new picture shows immediately everywhere.
-        avatarUrl = `${pub.publicUrl}?v=${Date.now()}`;
+          .upload(path, avatar, { upsert: true });
+        if (uploadError) throw new Error("Photo upload failed. Please try again.");
+        avatarUrl = supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl;
+        // Cache-bust so the new photo shows immediately everywhere.
+        avatarUrl = `${avatarUrl}?v=${Date.now()}`;
       }
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ full_name: fullName.trim(), course, year, avatar_url: avatarUrl })
-        .eq("id", profile.id);
-      if (updateError) throw new Error(updateError.message);
+        .update({ full_name: name, course, year, avatar_url: avatarUrl })
+        .eq("id", user.id);
+      if (updateError) throw new Error("Could not save your profile. Please try again.");
       await refreshProfile();
       setEditing(false);
+      setSaved(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save changes. Please try again.");
+      setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
-      setBusy(false);
+      setSaving(false);
     }
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <section className="rounded-3xl border border-stone-900/5 bg-white p-6 shadow-sm">
-        {!editing ? (
-          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-            <ProfileAvatar
-              name={profile.full_name}
-              avatarUrl={profile.avatar_url}
-              className="h-20 w-20 text-xl"
-            />
-            <div className="min-w-0 flex-1">
-              <h1 className="text-2xl font-black tracking-tight">{profile.full_name}</h1>
-              <p className="mt-0.5 text-sm font-medium text-stone-500">
-                {profile.course} · {profile.year} year
-              </p>
-              <p className="truncate text-sm text-stone-500">{session?.user.email}</p>
-              <p className="mt-1 text-xs text-stone-400">
-                On Campora since{" "}
-                {new Date(profile.created_at).toLocaleDateString("en-IN", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                })}
-              </p>
-            </div>
+    <div className="flex flex-col gap-4">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.05)]" aria-label="My profile">
+        <div className="flex flex-wrap items-center gap-4">
+          <ProfileAvatar name={profile.full_name} avatarUrl={profile.avatar_url} size="lg" />
+          <div className="min-w-0 flex-1">
+            <h2 className="text-xl font-bold text-slate-900">{profile.full_name}</h2>
+            <p className="text-sm text-slate-500">
+              {profile.course} · {profile.year} year
+            </p>
+            <p className="text-sm text-slate-500">{user.email}</p>
+          </div>
+          {!editing && (
             <button
               type="button"
               onClick={startEditing}
-              className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-500"
+              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
             >
               Edit profile
             </button>
-          </div>
-        ) : (
-          <form onSubmit={onSave} className="flex flex-col gap-4">
-            <h2 className="text-lg font-black tracking-tight">Edit profile</h2>
-            <ProfileAvatarInput
-              name={fullName || profile.full_name}
-              currentUrl={profile.avatar_url}
-              file={avatar}
-              onChange={setAvatar}
-            />
-            <label className="block">
-              <span className={labelCls}>Full name</span>
+          )}
+        </div>
+
+        {saved && !editing && (
+          <p role="status" className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+            Profile saved.
+          </p>
+        )}
+
+        {editing && (
+          <form onSubmit={handleSave} className="mt-5 flex flex-col gap-4 border-t border-slate-100 pt-5" noValidate>
+            <div>
+              <label className={labelClass} htmlFor="profile-name">Full name</label>
               <input
+                id="profile-name"
                 type="text"
-                required
-                className={inputCls}
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
+                className={inputClass}
               />
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <label className="block">
-                <span className={labelCls}>Course</span>
-                <select className={inputCls} value={course} onChange={(e) => setCourse(e.target.value)}>
-                  {COURSES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="block">
-                <span className={labelCls}>Year</span>
-                <select className={inputCls} value={year} onChange={(e) => setYear(e.target.value)}>
-                  {YEARS.map((y) => (
-                    <option key={y} value={y}>
-                      {y} year
-                    </option>
-                  ))}
-                </select>
-              </label>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelClass} htmlFor="profile-course">Course</label>
+                <select id="profile-course" value={course} onChange={(e) => setCourse(e.target.value)} className={inputClass}>
+                  {COURSES.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className={labelClass} htmlFor="profile-year">Year of study</label>
+                <select id="profile-year" value={year} onChange={(e) => setYear(e.target.value)} className={inputClass}>
+                  {YEARS.map((y) => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <ProfileAvatarInput preview={avatarPreview} name={fullName || profile.full_name} onPick={pickAvatar} />
             {error && (
-              <p role="alert" className="rounded-xl bg-rose-50 px-3.5 py-2.5 text-sm font-medium text-rose-700">
-                {error}
-              </p>
+              <p role="alert" className="text-sm text-red-600">{error}</p>
             )}
-            <div className="flex gap-2.5">
+            <div className="flex gap-2">
               <button
                 type="submit"
-                disabled={busy}
-                className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-500 disabled:opacity-60"
+                disabled={saving}
+                className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:opacity-60"
               >
-                {busy ? "Saving…" : "Save changes"}
+                {saving ? "Saving..." : "Save changes"}
               </button>
               <button
                 type="button"
                 onClick={() => setEditing(false)}
-                className="rounded-xl bg-stone-900/5 px-4 py-2.5 text-sm font-bold text-stone-700 transition hover:bg-stone-900/10"
+                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
               >
                 Cancel
               </button>
@@ -247,87 +278,28 @@ function OwnProfile() {
         )}
       </section>
 
-      <section>
-        <h2 className="mb-3 text-base font-black tracking-tight">Your posts</h2>
-        <PostList
-          posts={posts}
-          loading={loading}
-          emptyText="You have not posted yet. Share your first campus update from the home feed."
-          onChanged={reload}
-        />
-      </section>
-
-      <button
-        type="button"
-        onClick={() => router.push("/")}
-        className="self-start text-sm font-semibold text-indigo-700 hover:underline"
-      >
-        ← Back to the campus feed
-      </button>
+      <h3 className="text-lg font-bold text-slate-900">Your posts</h3>
+      <PostsList userId={profile.id} />
     </div>
   );
 }
 
-function OtherProfile({ userId }: { userId: string }) {
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [missing, setMissing] = useState(false);
-  const { posts, loading } = useUserPosts(userId);
+function ProfileRouter() {
+  const searchParams = useSearchParams();
+  const { user } = useAuth();
+  const id = searchParams.get("id");
+  if (id && user && id !== user.id) return <OtherProfile id={id} />;
+  return <MyProfile />;
+}
 
-  useEffect(() => {
-    const supabase = getSupabase();
-    if (!supabase) return;
-    supabase
-      .from("profiles")
-      .select("id, full_name, course, year, avatar_url, created_at")
-      .eq("id", userId)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) setProfile(data as Profile);
-        else setMissing(true);
-      });
-  }, [userId]);
-
-  if (missing)
-    return (
-      <div className="rounded-3xl border border-dashed border-stone-300 bg-white/60 px-6 py-14 text-center">
-        <p className="font-bold">Profile not found</p>
-        <Link href="/" className="mt-2 inline-block text-sm font-semibold text-indigo-700 hover:underline">
-          Back to the campus feed
-        </Link>
-      </div>
-    );
-  if (!profile)
-    return <p className="py-16 text-center text-sm text-stone-500">Loading profile…</p>;
-
+export default function ProfilePage() {
   return (
-    <div className="flex flex-col gap-6">
-      <section className="rounded-3xl border border-stone-900/5 bg-white p-6 shadow-sm">
-        <div className="flex items-center gap-4">
-          <ProfileAvatar
-            name={profile.full_name}
-            avatarUrl={profile.avatar_url}
-            className="h-20 w-20 text-xl"
-          />
-          <div>
-            <h1 className="text-2xl font-black tracking-tight">{profile.full_name}</h1>
-            <p className="mt-0.5 text-sm font-medium text-stone-500">
-              {profile.course} · {profile.year} year
-            </p>
-            <p className="mt-1 text-xs text-stone-400">
-              On Campora since{" "}
-              {new Date(profile.created_at).toLocaleDateString("en-IN", {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-              })}
-            </p>
-          </div>
-        </div>
-      </section>
-      <section>
-        <h2 className="mb-3 text-base font-black tracking-tight">Posts by {profile.full_name}</h2>
-        <PostList posts={posts} loading={loading} emptyText="No posts yet." />
-      </section>
-    </div>
+    <AuthGate>
+      <AppShell>
+        <Suspense fallback={<LoadingScreen label="Loading profile" />}>
+          <ProfileRouter />
+        </Suspense>
+      </AppShell>
+    </AuthGate>
   );
 }
