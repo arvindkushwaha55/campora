@@ -1,338 +1,331 @@
 "use client";
 
-import { useState, type RefObject } from "react";
-import { PROFILES, SPOTS, type Spot } from "@/lib/data";
-import type { CamporaStore, FeedPost } from "@/lib/store";
-import { Avatar, CommentIcon, CoverGlyph, FlagIcon, HeartIcon, PinIcon, SendIcon, TrashIcon } from "./icons";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useAuth } from "@/lib/auth";
+import { fileExtension, getSupabase } from "@/lib/supabase";
+import { MAX_IMAGE_BYTES, MAX_POST_LENGTH, type Post } from "@/lib/constants";
+import { Framed } from "./common";
+import { ImageIcon, ProfileAvatar, TrashIcon } from "./icons";
 
-const COVER_STYLES: Record<string, string> = {
-  library: "bg-indigo-100 text-indigo-800",
-  robot: "bg-amber-100 text-amber-800",
-  code: "bg-emerald-100 text-emerald-800",
-  food: "bg-pink-100 text-pink-800",
-  trophy: "bg-violet-100 text-violet-800",
-};
+/** "28 Oct 2026, 9:41 am" — date + time for every post, as required. */
+export function formatDateTime(iso: string): string {
+  const d = new Date(iso);
+  const date = d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  const time = d.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
+  return `${date}, ${time}`;
+}
 
-const MAX_POST_LENGTH = 500;
+const POST_SELECT =
+  "id, user_id, text, image_url, created_at, profiles(full_name, avatar_url, course, year)";
 
-export function Composer({
-  store,
-  onToast,
-  textareaRef,
-}: {
-  store: CamporaStore;
-  onToast: (msg: string) => void;
-  textareaRef: RefObject<HTMLTextAreaElement | null>;
-}) {
-  const [text, setText] = useState("");
-  const [spot, setSpot] = useState<Spot>("Main Block");
+async function fetchFeed(): Promise<Post[]> {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("posts")
+    .select(POST_SELECT)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data as Post[] | null) ?? [];
+}
+
+export function Feed() {
+  const { profile } = useAuth();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  function submit() {
-    const value = text.trim();
-    if (value.length < 2) {
-      setError("Write a little more before posting — a post needs at least a few characters.");
-      return;
+  const load = useCallback(async () => {
+    try {
+      setError("");
+      setPosts(await fetchFeed());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not load the feed.");
+    } finally {
+      setLoading(false);
     }
-    if (value.length > MAX_POST_LENGTH) {
-      setError(`Posts are limited to ${MAX_POST_LENGTH} characters.`);
-      return;
-    }
-    store.addPost(value, spot);
-    setText("");
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  return (
+    <Framed>
+      <div className="flex flex-col gap-5">
+        <div>
+          <h1 className="text-2xl font-black tracking-tight">
+            {profile ? `Hi, ${profile.full_name.split(" ")[0]} 👋` : "Campus Feed"}
+          </h1>
+          <p className="mt-0.5 text-sm text-stone-500">
+            Posts from students on your campus, newest first.
+          </p>
+        </div>
+
+        <Composer onPosted={load} />
+
+        <section aria-label="Campus feed" className="flex flex-col gap-4">
+          <h2 className="text-base font-black tracking-tight">Campus Feed</h2>
+          {error && (
+            <p role="alert" className="rounded-xl bg-rose-50 px-3.5 py-2.5 text-sm font-medium text-rose-700">
+              {error}{" "}
+              <button type="button" onClick={() => void load()} className="font-bold underline">
+                Retry
+              </button>
+            </p>
+          )}
+          {loading ? (
+            <p className="py-10 text-center text-sm text-stone-500">Loading the feed…</p>
+          ) : posts.length === 0 && !error ? (
+            <div className="rounded-3xl border border-dashed border-stone-300 bg-white/60 px-6 py-12 text-center">
+              <p className="text-base font-bold">No posts yet</p>
+              <p className="mx-auto mt-1 max-w-xs text-sm text-stone-500">
+                Be the first to share something about campus today.
+              </p>
+            </div>
+          ) : (
+            posts.map((post) => <PostCard key={post.id} post={post} onDeleted={load} />)
+          )}
+        </section>
+      </div>
+    </Framed>
+  );
+}
+
+function Composer({ onPosted }: { onPosted: () => Promise<void> }) {
+  const { session, profile } = useAuth();
+  const [text, setText] = useState("");
+  const [image, setImage] = useState<File | null>(null);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const imagePreview = image ? URL.createObjectURL(image) : null;
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
     setError("");
-    onToast("Post published. It is saved on this device (demo persistence — no server yet).");
+    const supabase = getSupabase();
+    if (!supabase || !session) return;
+
+    const trimmed = text.trim();
+    if (!trimmed) return setError("Write something first — a post needs text.");
+    if (trimmed.length > MAX_POST_LENGTH)
+      return setError(`Please keep the post under ${MAX_POST_LENGTH} characters.`);
+    if (image) {
+      if (!image.type.startsWith("image/")) return setError("The attached file must be an image.");
+      if (image.size > MAX_IMAGE_BYTES) return setError("Image must be smaller than 5 MB.");
+    }
+
+    setBusy(true);
+    try {
+      // 1. Optional image → post-images bucket, inside my own folder only.
+      let imageUrl: string | null = null;
+      if (image) {
+        const path = `${session.user.id}/${Date.now()}.${fileExtension(image.name)}`;
+        const { error: uploadError } = await supabase.storage
+          .from("post-images")
+          .upload(path, image, { contentType: image.type });
+        if (uploadError) throw new Error(`Image upload failed: ${uploadError.message}`);
+        imageUrl = supabase.storage.from("post-images").getPublicUrl(path).data.publicUrl;
+      }
+      // 2. The post row itself (RLS checks that user_id is really me).
+      const { error: insertError } = await supabase
+        .from("posts")
+        .insert({ user_id: session.user.id, text: trimmed, image_url: imageUrl });
+      if (insertError) throw new Error(insertError.message);
+
+      setText("");
+      setImage(null);
+      await onPosted();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not publish the post. Please try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.05)]" aria-label="Create a post">
-      <div className="flex gap-3">
-        <Avatar name={PROFILES.you.name} color={PROFILES.you.color} />
+    <form
+      onSubmit={onSubmit}
+      className="rounded-3xl border border-stone-900/5 bg-white p-4 shadow-sm sm:p-5"
+    >
+      <div className="flex items-start gap-3">
+        <ProfileAvatar
+          name={profile?.full_name ?? "You"}
+          avatarUrl={profile?.avatar_url}
+          className="mt-0.5 h-10 w-10 text-xs"
+        />
         <textarea
-          ref={textareaRef}
-          id="campora-composer"
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={3}
-          maxLength={MAX_POST_LENGTH + 50}
+          maxLength={MAX_POST_LENGTH + 100}
           placeholder="Share something about campus today..."
-          className="w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[15px] text-slate-900 outline-none placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+          className="w-full resize-none rounded-2xl border border-stone-200 bg-stone-50 px-3.5 py-2.5 text-sm outline-none transition placeholder:text-stone-400 focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-200"
           aria-label="Write a post"
         />
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-2.5 pl-[52px]">
-        <label className="flex items-center gap-1.5 text-sm text-slate-500">
-          <PinIcon className="h-4 w-4" />
-          <span className="sr-only">Choose a campus spot</span>
-          <select
-            value={spot}
-            onChange={(e) => setSpot(e.target.value as Spot)}
-            className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-indigo-400"
+
+      {imagePreview && (
+        <div className="relative mt-3 overflow-hidden rounded-2xl">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={imagePreview} alt="Selected attachment" className="max-h-64 w-full object-cover" />
+          <button
+            type="button"
+            onClick={() => setImage(null)}
+            className="absolute right-2.5 top-2.5 rounded-full bg-stone-900/70 px-3 py-1 text-xs font-bold text-white"
           >
-            {SPOTS.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-        </label>
-        <span className="ml-auto text-xs text-slate-400">{text.length}/{MAX_POST_LENGTH}</span>
+            Remove
+          </button>
+        </div>
+      )}
+
+      <div className="mt-3 flex items-center gap-2.5">
         <button
           type="button"
-          onClick={submit}
-          className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
+          onClick={() => fileRef.current?.click()}
+          className="flex items-center gap-2 rounded-xl bg-stone-900/5 px-3 py-2 text-sm font-bold text-stone-700 transition hover:bg-stone-900/10"
         >
-          Post
+          <ImageIcon className="h-4.5 w-4.5" />
+          {image ? "Change photo" : "Add photo"}
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => setImage(e.target.files?.[0] ?? null)}
+        />
+        <span className="ml-auto text-xs font-medium text-stone-400">
+          {text.trim().length}/{MAX_POST_LENGTH}
+        </span>
+        <button
+          type="submit"
+          disabled={busy}
+          className="rounded-xl bg-indigo-600 px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-500 disabled:opacity-60"
+        >
+          {busy ? "Posting…" : "Post"}
         </button>
       </div>
+
       {error && (
-        <p role="alert" className="mt-2.5 pl-[52px] text-sm text-red-600">{error}</p>
+        <p role="alert" className="mt-3 rounded-xl bg-rose-50 px-3.5 py-2.5 text-sm font-medium text-rose-700">
+          {error}
+        </p>
       )}
-    </section>
+    </form>
   );
+}
+
+/** Extracts the storage path from a post-images public URL (for cleanup). */
+function storagePathFromUrl(publicUrl: string): string | null {
+  const marker = "/post-images/";
+  const idx = publicUrl.indexOf(marker);
+  if (idx === -1) return null;
+  return decodeURIComponent(publicUrl.slice(idx + marker.length).split("?")[0]);
 }
 
 export function PostCard({
   post,
-  store,
-  onOpenProfile,
-  onToast,
+  onDeleted,
 }: {
-  post: FeedPost;
-  store: CamporaStore;
-  onOpenProfile: (authorId: string) => void;
-  onToast: (msg: string) => void;
+  post: Post;
+  onDeleted?: () => void | Promise<void>;
 }) {
-  const author = PROFILES[post.authorId];
-  const [commentsOpen, setCommentsOpen] = useState(false);
-  const [draft, setDraft] = useState("");
-  const [confirming, setConfirming] = useState<"delete" | "report" | null>(null);
+  const { session } = useAuth();
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const mine = session?.user.id === post.user_id;
+  const authorName = post.profiles?.full_name ?? "Student";
 
-  function sendComment() {
-    const value = draft.trim();
-    if (!value) return;
-    store.addComment(post.id, value);
-    setDraft("");
-    setCommentsOpen(true);
+  async function onDelete() {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    setBusy(true);
+    setError("");
+    // Best-effort cleanup of the attached image; the row delete is the
+    // source of truth and RLS guarantees only my own post can be deleted.
+    if (post.image_url) {
+      const path = storagePathFromUrl(post.image_url);
+      if (path) await supabase.storage.from("post-images").remove([path]);
+    }
+    const { error: deleteError } = await supabase.from("posts").delete().eq("id", post.id);
+    setBusy(false);
+    if (deleteError) {
+      setError(deleteError.message);
+      return;
+    }
+    await onDeleted?.();
   }
 
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.05)]">
+    <article className="rounded-3xl border border-stone-900/5 bg-white p-4 shadow-sm transition hover:shadow-md sm:p-5">
       <header className="flex items-start gap-3">
-        <button type="button" onClick={() => onOpenProfile(post.authorId)} className="rounded-full" aria-label={`Open ${author.name}'s profile`}>
-          <Avatar name={author.name} color={author.color} />
-        </button>
-        <div className="min-w-0 flex-1">
-          <button
-            type="button"
-            onClick={() => onOpenProfile(post.authorId)}
-            className="block max-w-full truncate text-left text-[15px] font-semibold text-slate-900 hover:underline"
+        <Link href={`/profile?id=${post.user_id}`} className="shrink-0">
+          <ProfileAvatar name={authorName} avatarUrl={post.profiles?.avatar_url} />
+        </Link>
+        <div className="min-w-0 flex-1 leading-tight">
+          <Link
+            href={`/profile?id=${post.user_id}`}
+            className="truncate text-[15px] font-bold hover:underline"
           >
-            {author.name}
-          </button>
-          <p className="truncate text-[13px] text-slate-500">
-            {author.course} · {post.timeLabel}
+            {authorName}
+          </Link>
+          <p className="mt-0.5 text-xs text-stone-500">
+            {post.profiles?.course && post.profiles?.year
+              ? `${post.profiles.course} · ${post.profiles.year} year · `
+              : ""}
+            {formatDateTime(post.created_at)}
           </p>
         </div>
-        <span className="flex shrink-0 items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-          <PinIcon className="h-3.5 w-3.5" /> {post.spot}
-        </span>
-      </header>
-
-      {post.sample && (
-        <p className="mt-2 inline-block rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-wide text-slate-500">
-          Sample post
-        </p>
-      )}
-
-      <p className="mt-2 whitespace-pre-wrap text-[15px] leading-relaxed text-slate-800">{post.text}</p>
-
-      {post.cover && (
-        <div className={`mt-3 flex h-28 items-center justify-center gap-3 rounded-xl ${COVER_STYLES[post.cover.icon]}`}>
-          <CoverGlyph icon={post.cover.icon} />
-          <span className="text-sm font-semibold">{post.cover.label}</span>
-        </div>
-      )}
-
-      <div className="mt-3 flex items-center gap-2 border-t border-slate-100 pt-3">
-        <button
-          type="button"
-          onClick={() => store.toggleLike(post.id)}
-          aria-pressed={post.likedByMe}
-          className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-            post.likedByMe ? "bg-rose-50 text-rose-600" : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
-          }`}
-        >
-          <HeartIcon className="h-[18px] w-[18px]" fill={post.likedByMe ? "currentColor" : "none"} />
-          {post.likeCount}
-        </button>
-        <button
-          type="button"
-          onClick={() => setCommentsOpen((v) => !v)}
-          aria-expanded={commentsOpen}
-          className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
-        >
-          <CommentIcon className="h-[18px] w-[18px]" />
-          {post.comments.length} {post.comments.length === 1 ? "comment" : "comments"}
-        </button>
-        <span className="ml-auto flex items-center gap-1">
-          {post.mine ? (
-            confirming === "delete" ? (
-              <>
-                <button type="button" className="rounded-full px-2.5 py-1.5 text-[13px] font-semibold text-red-600 hover:bg-red-50"
-                  onClick={() => { store.deletePost(post.id); onToast("Your post was deleted from this device."); }}>
-                  Confirm delete
-                </button>
-                <button type="button" className="rounded-full px-2.5 py-1.5 text-[13px] text-slate-500 hover:bg-slate-50" onClick={() => setConfirming(null)}>
-                  Cancel
-                </button>
-              </>
-            ) : (
-              <button type="button" onClick={() => setConfirming("delete")} className="flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[13px] text-slate-400 hover:bg-red-50 hover:text-red-600" aria-label="Delete my post">
-                <TrashIcon className="h-4 w-4" /> Delete
+        {mine &&
+          (confirming ? (
+            <span className="flex shrink-0 items-center gap-1.5">
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void onDelete()}
+                className="rounded-lg bg-rose-600 px-2.5 py-1.5 text-xs font-bold text-white disabled:opacity-60"
+              >
+                {busy ? "Deleting…" : "Confirm delete"}
               </button>
-            )
-          ) : post.reportedByMe ? (
-            <span className="px-2.5 py-1.5 text-[13px] text-slate-400">Reported</span>
-          ) : confirming === "report" ? (
-            <>
-              <button type="button" className="rounded-full px-2.5 py-1.5 text-[13px] font-semibold text-amber-700 hover:bg-amber-50"
-                onClick={() => { store.reportPost(post.id); onToast("Report saved on this device and the post is hidden for you. Campora has no moderation backend yet, so reports are not reviewed automatically."); }}>
-                Confirm report
-              </button>
-              <button type="button" className="rounded-full px-2.5 py-1.5 text-[13px] text-slate-500 hover:bg-slate-50" onClick={() => setConfirming(null)}>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => setConfirming(false)}
+                className="rounded-lg bg-stone-900/5 px-2.5 py-1.5 text-xs font-bold text-stone-700"
+              >
                 Cancel
               </button>
-            </>
+            </span>
           ) : (
-            <button type="button" onClick={() => setConfirming("report")} className="flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[13px] text-slate-400 hover:bg-slate-50 hover:text-slate-600" aria-label="Report this post">
-              <FlagIcon className="h-4 w-4" /> Report
-            </button>
-          )}
-        </span>
-      </div>
-
-      {commentsOpen && (
-        <div className="mt-3 border-t border-slate-100 pt-3">
-          {post.comments.length === 0 ? (
-            <p className="text-sm text-slate-400">No comments yet. Start the conversation.</p>
-          ) : (
-            <ul className="flex flex-col gap-3">
-              {post.comments.map((c) => {
-                const ca = PROFILES[c.authorId];
-                return (
-                  <li key={c.id} className="flex gap-2.5">
-                    <Avatar name={ca.name} color={ca.color} size="sm" />
-                    <div className="min-w-0 rounded-xl bg-slate-50 px-3 py-2">
-                      <p className="text-[13px] font-semibold text-slate-800">
-                        {ca.name} <span className="ml-1 font-normal text-slate-400">{c.timeLabel}</span>
-                      </p>
-                      <p className="text-sm leading-relaxed text-slate-700">{c.text}</p>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-          <form
-            className="mt-3 flex gap-2"
-            onSubmit={(e) => { e.preventDefault(); sendComment(); }}
-          >
-            <label className="sr-only" htmlFor={`comment-${post.id}`}>Add a comment</label>
-            <input
-              id={`comment-${post.id}`}
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              placeholder="Write a comment..."
-              className="w-full rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm outline-none placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-            />
-            <button type="submit" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-indigo-600 text-white hover:bg-indigo-700" aria-label="Send comment">
-              <SendIcon className="h-4 w-4" />
-            </button>
-          </form>
-        </div>
-      )}
-    </article>
-  );
-}
-
-export function FeedSection({
-  posts,
-  store,
-  spot,
-  onSpotChange,
-  onOpenProfile,
-  onToast,
-}: {
-  posts: FeedPost[];
-  store: CamporaStore;
-  spot: Spot | "All";
-  onSpotChange: (s: Spot | "All") => void;
-  onOpenProfile: (authorId: string) => void;
-  onToast: (msg: string) => void;
-}) {
-  const [sort, setSort] = useState<"latest" | "popular">("latest");
-  const filtered = spot === "All" ? posts : posts.filter((p) => p.spot === spot);
-  const sorted = [...filtered].sort((a, b) =>
-    sort === "latest" ? a.hoursAgo - b.hoursAgo : b.likeCount - a.likeCount
-  );
-
-  return (
-    <section aria-label="Campus feed" className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <h2 className="mr-1 text-lg font-bold text-slate-900">Campus Feed</h2>
-        <div className="ml-auto flex rounded-full border border-slate-200 bg-white p-0.5" role="group" aria-label="Sort feed">
-          {(["latest", "popular"] as const).map((s) => (
             <button
-              key={s}
               type="button"
-              onClick={() => setSort(s)}
-              aria-pressed={sort === s}
-              className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold capitalize transition-colors ${
-                sort === s ? "bg-indigo-600 text-white" : "text-slate-500 hover:text-slate-800"
-              }`}
+              onClick={() => setConfirming(true)}
+              className="flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold text-stone-500 transition hover:bg-rose-50 hover:text-rose-700"
             >
-              {s}
+              <TrashIcon className="h-4 w-4" />
+              Delete
             </button>
           ))}
-        </div>
-      </div>
+      </header>
 
-      <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by campus spot">
-        {(["All", ...SPOTS] as const).map((s) => (
-          <button
-            key={s}
-            type="button"
-            onClick={() => onSpotChange(s)}
-            aria-pressed={spot === s}
-            className={`rounded-full border px-3 py-1.5 text-[13px] font-medium transition-colors ${
-              spot === s
-                ? "border-indigo-600 bg-indigo-600 text-white"
-                : "border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:text-indigo-700"
-            }`}
-          >
-            {s}
-          </button>
-        ))}
-      </div>
+      <p className="mt-3 whitespace-pre-wrap text-[15px] leading-relaxed">{post.text}</p>
 
-      {sorted.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center">
-          <p className="font-semibold text-slate-700">No posts here yet</p>
-          <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
-            {spot === "All"
-              ? "The feed is empty right now. Be the first to share a campus update."
-              : `Nothing has been posted from ${spot} yet. Try a different spot, or post the first update from there.`}
-          </p>
-          {spot !== "All" && (
-            <button type="button" onClick={() => onSpotChange("All")} className="mt-3 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50">
-              Show all posts
-            </button>
-          )}
+      {post.image_url && (
+        <div className="mt-3 overflow-hidden rounded-2xl">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={post.image_url} alt="Post attachment" className="max-h-96 w-full object-cover" />
         </div>
-      ) : (
-        sorted.map((post) => (
-          <PostCard key={post.id} post={post} store={store} onOpenProfile={onOpenProfile} onToast={onToast} />
-        ))
       )}
-    </section>
+
+      {error && (
+        <p role="alert" className="mt-3 rounded-xl bg-rose-50 px-3.5 py-2.5 text-sm font-medium text-rose-700">
+          {error}
+        </p>
+      )}
+    </article>
   );
 }
