@@ -11,3 +11,14 @@ export const isSupabaseConfigured = Boolean(url && anonKey);
 export const supabase: SupabaseClient | null = isSupabaseConfigured
   ? createClient(url as string, anonKey as string)
   : null;
+
+/**
+ * Absolute URL of an app page, used for auth email links (email confirmation
+ * and password reset). Handles the GitHub Pages base path (/campora) and
+ * local development (no base path).
+ */
+export function siteUrl(path: string): string {
+  if (typeof window === "undefined") return path;
+  const base = window.location.pathname.startsWith("/campora") ? "/campora" : "";
+  return `${window.location.origin}${base}${path}`;
+}
