@@ -1,11 +1,35 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { isSupabaseConfigured } from "@/lib/supabase";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
+import type { College, Profile } from "@/lib/constants";
 import { Brand } from "./shell";
 import { CameraIcon, ProfileAvatar } from "./icons";
+
+/** Loads the configured college (name + approved email domain), if any. */
+export function useCollege(): College | null {
+  const [college, setCollege] = useState<College | null>(null);
+  useEffect(() => {
+    if (!supabase) return;
+    let active = true;
+    supabase
+      .from("colleges")
+      .select("id, name, email_domain, is_active")
+      .eq("is_active", true)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (active) setCollege((data as College | null) ?? null);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+  return college;
+}
 
 export function NotConfigured() {
   return (
@@ -33,11 +57,78 @@ export function LoadingScreen({ label = "Loading..." }: { label?: string }) {
   );
 }
 
+/**
+ * Shown to signed-in students whose account is not approved yet (or was
+ * rejected). The campus feed stays locked until an admin verifies the
+ * student's College ID — this gate is also enforced by the database (RLS),
+ * this screen just explains it.
+ */
+export function VerificationScreen({ profile }: { profile: Profile }) {
+  const { user, signOut } = useAuth();
+  const router = useRouter();
+  const rejected = profile.verification_status === "rejected";
+  const emailConfirmed = Boolean(user?.email_confirmed_at);
+
+  async function handleLogout() {
+    await signOut();
+    router.replace("/login");
+  }
+
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-10">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-[0_1px_3px_rgba(15,23,42,0.05)]">
+        <div className="flex justify-center">
+          <Brand />
+        </div>
+        <span
+          className={`mt-5 inline-block rounded-full px-3 py-1 text-xs font-bold ${
+            rejected ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"
+          }`}
+        >
+          {rejected ? "Verification not approved" : "Verification pending"}
+        </span>
+        <h1 className="mt-3 text-xl font-bold text-slate-900">
+          {rejected ? "Your account was not approved" : "One more step, " + profile.full_name.split(" ")[0]}
+        </h1>
+        <p className="mt-2 text-sm leading-relaxed text-slate-500">
+          {rejected
+            ? "An admin reviewed your details and could not verify your College ID. If you think this is a mistake, please contact your faculty admin with your College ID card."
+            : "Your account is created. An admin will verify your College ID, and then your campus feed unlocks automatically. This usually happens once the admin reviews new signups."}
+        </p>
+        {!rejected && (
+          <ul className="mt-5 flex flex-col gap-2.5 text-left text-sm">
+            <li className="flex items-center gap-2.5">
+              <span className={`grid h-5 w-5 shrink-0 place-items-center rounded-full text-[11px] font-bold ${emailConfirmed ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                {emailConfirmed ? "✓" : "1"}
+              </span>
+              <span className="text-slate-600">
+                {emailConfirmed ? "Email verified" : "Confirm your email from the link we sent you"}
+              </span>
+            </li>
+            <li className="flex items-center gap-2.5">
+              <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-amber-100 text-[11px] font-bold text-amber-700">2</span>
+              <span className="text-slate-600">Admin verifies your College ID ({profile.course} · {profile.year} year)</span>
+            </li>
+          </ul>
+        )}
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="mt-6 w-full rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+        >
+          Log out
+        </button>
+      </div>
+    </main>
+  );
+}
+
 // Wraps signed-in pages: shows the setup screen when the backend keys are
-// missing, a loading state while the session is checked, and sends
-// signed-out visitors to /login.
+// missing, a loading state while the session is checked, sends signed-out
+// visitors to /login, and keeps unverified students on the verification
+// screen until an admin approves their College ID.
 export function AuthGate({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -47,7 +138,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   }, [loading, user, router]);
 
   if (!isSupabaseConfigured) return <NotConfigured />;
-  if (loading) {
+  if (loading || (user && !profile)) {
     return (
       <div className="mx-auto w-full max-w-3xl px-4 pt-6">
         <LoadingScreen />
@@ -55,6 +146,9 @@ export function AuthGate({ children }: { children: ReactNode }) {
     );
   }
   if (!user) return null;
+  if (profile && !profile.is_admin && profile.verification_status !== "approved") {
+    return <VerificationScreen profile={profile} />;
+  }
   return <>{children}</>;
 }
 
