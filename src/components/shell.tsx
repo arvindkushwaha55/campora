@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
-import { HomeIcon, LogOutIcon, ProfileAvatar, UserIcon } from "./icons";
+import { HomeIcon, LogOutIcon, ProfileAvatar, SearchIcon, ShieldIcon, UserIcon } from "./icons";
 
 export function Brand() {
   return (
@@ -42,12 +42,28 @@ export function Sidebar() {
           <HomeIcon className="h-5 w-5" /> Home
         </Link>
         <Link
+          href="/students"
+          className={navClass(pathname.startsWith("/students"))}
+          aria-current={pathname.startsWith("/students") ? "page" : undefined}
+        >
+          <SearchIcon className="h-5 w-5" /> Students
+        </Link>
+        <Link
           href="/profile"
           className={navClass(pathname.startsWith("/profile"))}
           aria-current={pathname.startsWith("/profile") ? "page" : undefined}
         >
           <UserIcon className="h-5 w-5" /> My Profile
         </Link>
+        {profile?.is_admin && (
+          <Link
+            href="/admin"
+            className={navClass(pathname.startsWith("/admin"))}
+            aria-current={pathname.startsWith("/admin") ? "page" : undefined}
+          >
+            <ShieldIcon className="h-5 w-5" /> Admin
+          </Link>
+        )}
         <button
           type="button"
           onClick={handleLogout}
@@ -93,7 +109,7 @@ export function TopBar() {
 export function MobileNav() {
   const pathname = usePathname();
   const router = useRouter();
-  const { signOut } = useAuth();
+  const { profile, signOut } = useAuth();
 
   async function handleLogout() {
     await signOut();
@@ -114,12 +130,28 @@ export function MobileNav() {
         <HomeIcon className="h-5 w-5" /> Home
       </Link>
       <Link
+        href="/students"
+        className={item(pathname.startsWith("/students"))}
+        aria-current={pathname.startsWith("/students") ? "page" : undefined}
+      >
+        <SearchIcon className="h-5 w-5" /> Students
+      </Link>
+      <Link
         href="/profile"
         className={item(pathname.startsWith("/profile"))}
         aria-current={pathname.startsWith("/profile") ? "page" : undefined}
       >
         <UserIcon className="h-5 w-5" /> Profile
       </Link>
+      {profile?.is_admin && (
+        <Link
+          href="/admin"
+          className={item(pathname.startsWith("/admin"))}
+          aria-current={pathname.startsWith("/admin") ? "page" : undefined}
+        >
+          <ShieldIcon className="h-5 w-5" /> Admin
+        </Link>
+      )}
       <button type="button" onClick={handleLogout} className={item(false)}>
         <LogOutIcon className="h-5 w-5" /> Log out
       </button>
