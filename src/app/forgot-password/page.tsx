@@ -37,12 +37,12 @@ export default function ForgotPasswordPage() {
     <AuthCard title="Reset your password" subtitle="We will email you a secure reset link.">
       {sent ? (
         <div className="flex flex-col gap-4">
-          <p role="status" className="rounded-lg bg-emerald-50 px-3 py-2.5 text-sm text-emerald-700">
+          <p role="status" className="rounded-lg bg-emerald-50 dark:bg-emerald-400/10 px-3 py-2.5 text-sm text-emerald-700 dark:text-emerald-300">
             If an account exists for {email.trim()}, a password reset link is on its way.
             Please check your inbox (and spam folder).
           </p>
-          <p className="text-center text-sm text-slate-500">
-            <Link href="/login" className="font-semibold text-indigo-700 hover:underline">
+          <p className="text-center text-sm text-slate-500 dark:text-slate-400">
+            <Link href="/login" className="font-semibold text-indigo-700 dark:text-indigo-300 hover:underline">
               Back to login
             </Link>
           </p>
@@ -71,9 +71,9 @@ export default function ForgotPasswordPage() {
           >
             {submitting ? "Sending..." : "Send reset link"}
           </button>
-          <p className="text-center text-sm text-slate-500">
+          <p className="text-center text-sm text-slate-500 dark:text-slate-400">
             Remembered it?{" "}
-            <Link href="/login" className="font-semibold text-indigo-700 hover:underline">
+            <Link href="/login" className="font-semibold text-indigo-700 dark:text-indigo-300 hover:underline">
               Log in
             </Link>
           </p>
