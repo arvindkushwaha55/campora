@@ -1,37 +1,76 @@
 # Campora
 
-> **Status: Work in Progress** — A personal mini project in active development. Campora is now a simple full-stack web app: real signup/login, student profiles, and posts stored in a database (Supabase). It is a learning project, not a production social network.
+> **Status: Work in Progress** — a personal mini project in active development. Campora is a **college-exclusive** social web app: only verified students of one configured college can join. Real accounts, real database (Supabase), admin-verified signups. It is a learning project, not a production social network.
 
-**Live Demo:** https://arvindkushwaha55.github.io/campora/
-(The live demo only works once the Supabase environment variables below are configured for the deployment — see [Deployment](#deployment).)
+**Live site:** https://arvindkushwaha55.github.io/campora/
+(The live site connects to Supabase only after the repository variables in [Deployment](#deployment) are set.)
 
-## Overview
+## The problem
 
-Campora is a campus-based social networking web app for college students. Students create an account with their name, course, and year of study; share text posts with an optional photo; and see a campus feed with posts from other registered students.
+General social media is open to everyone, which makes it noisy and impersonal for campus life. Students have no small, trusted space where **everyone is actually from their own college**. Campora is that space: a private campus feed where membership itself is verified.
+
+## How verification works (the core idea)
+
+Campora is **not** an open signup. A new account passes three gates:
+
+1. **College email domain** — signup requires an email from the configured college domain (stored in the `colleges` table). This is enforced **in the database** by the signup trigger, not just in the form, so it cannot be bypassed by calling the API directly.
+2. **Email confirmation** — the student confirms ownership of the email via Supabase's confirmation link.
+3. **Admin approval of the College ID** — signup also collects the student's College ID / enrollment number, which must be **unique** (database-enforced). The account starts as `pending` and cannot see the feed, posts, likes, or other students until an **admin reviews and approves** it on the in-app Verification Desk (`/admin`).
+
+> **Honest limitation:** there is no official college API or student database available to this project, so College ID verification is a **human admin check** (the admin compares the submitted ID with the student's ID card / college records). Campora never claims an ID is "verified" just because a student typed it in — an admin actually approves it.
+
+Privacy by design: College IDs are stored in a separate private table (`student_private`) that only the student themself and admins can read. College IDs and email addresses are **never** shown to other students.
 
 ## Features (implemented)
 
-- **Accounts** — email + password signup, login, and logout (Supabase Auth). Signup collects full name, course (B.Tech / BCA / BBA / B.Pharmacy / Other), year of study (1st–4th / Other), and an optional profile picture.
-- **Profiles** — every user has a profile (photo, name, course, year). You can edit your own details and change your profile picture, and view other students' profiles.
-- **Posts** — write a text post (up to 1000 characters) with an optional image. Posts are stored in the database, so they survive refresh and logout/login.
-- **Campus feed** — posts from all registered users, newest first, with the author's name, profile picture, course/year, and the post's date and time.
+- **Landing page** — explains the college-exclusive idea and the 3-step joining process.
+- **College-exclusive signup** — full name, College ID (unique), college email (domain-checked), password, course (B.Tech / BCA / BBA / B.Pharmacy / Other), year (1st–4th / Other), optional profile picture.
+- **Login / logout / forgot password** — email + password auth (Supabase Auth), with a working password-reset flow by email.
+- **Verification-pending screen** — unverified students see their verification status, not the feed.
+- **Profiles** — photo, name, course, year, and a short bio (up to 160 characters). Edit your own details and picture; view other verified students' profiles and their posts.
+- **Campus feed** — text posts (up to 1000 characters) with an optional image, newest first, with author name/photo, course/year and timestamp. Loads in pages of 10 with "Load more". Posts are stored in the database, so they survive refresh and re-login.
+- **Likes** — like/unlike any post; real counts from the database; the database primary key makes duplicate likes from the same student impossible.
+- **Student discovery** — search verified students by name, filter by course and year.
 - **Delete your own posts** — including their uploaded image.
-- **Security** — Row Level Security (RLS) in the database: users can only edit their own profile, create posts as themselves, and delete their own posts. Uploaded files are stored in per-user folders with matching storage policies.
+- **Admin Verification Desk** (`/admin`) — admins see pending signups with their (admin-only) College IDs and can approve or reject them.
+- **Security** — Row Level Security everywhere: only approved students can read the feed/profiles/likes; students can only edit their own profile and delete their own posts; a database trigger stops students from changing their own verification status or admin flag; uploads live in per-user storage folders with matching policies. No service-role key is ever used in the frontend.
 
 ### Not built (out of scope for this version)
 
-Comments, likes, direct messages, follow system, events, and real-time updates are intentionally not part of this version.
+Comments, direct messages, follow system, events, reels/video, and real-time updates are intentionally not part of this version.
 
-## Tech Stack
+## Tech stack
 
-- **Next.js 15** (App Router) + **React 19**
-- **TypeScript**
+- **Next.js 15** (App Router) + **React 19**, **TypeScript**
 - **Tailwind CSS v4**
-- **Supabase** — authentication, Postgres database, and image storage
-- **Git + GitHub** for version control
-- Deployment: **GitHub Pages** (static export)
+- **Supabase** — Auth (email + password, email confirmation, password reset), Postgres with RLS, image storage
+- **Git + GitHub**, deployment via **GitHub Pages** (static export)
 
-## Getting Started
+## Architecture overview
+
+```
+Browser (Next.js static export)
+   │  supabase-js with the public anon key
+   ▼
+Supabase
+   ├── Auth          — accounts, email confirmation, password reset
+   ├── Postgres      — colleges, profiles, student_private, posts, likes
+   │     └── RLS + triggers enforce: college domain, unique College ID,
+   │         approved-only feed, nobody can self-approve
+   └── Storage       — avatars, post-images (per-user folders)
+```
+
+### Database schema
+
+| Table | What it holds |
+| --- | --- |
+| `colleges` | The configured college: name, approved email domain, active flag. One row today; the design allows more colleges later. |
+| `profiles` | Public student profile: name, course, year, avatar, bio, `verification_status` (pending/approved/rejected), `is_admin`, join date. |
+| `student_private` | Private identity: the student's College ID. Readable only by the owner and admins. Unique College ID enforced here. |
+| `posts` | Post text, optional image URL, author, timestamp. |
+| `likes` | `(post_id, user_id)` pairs — the composite primary key prevents duplicate likes. |
+
+## Getting started
 
 ### 1. Install
 
@@ -41,12 +80,16 @@ cd campora
 npm install
 ```
 
-### 2. Create the Supabase project
+### 2. Create the Supabase project and database
 
 1. Go to [supabase.com](https://supabase.com) and create a free project (any name, e.g. `campora`).
-2. In the dashboard, open **SQL Editor → New query**, paste the entire contents of [`supabase/schema.sql`](supabase/schema.sql), and run it. This creates the `profiles` and `posts` tables, the RLS policies, the automatic profile-on-signup trigger, and the `avatars` + `post-images` storage buckets.
-3. Open **Authentication → Providers → Email** and turn **off** "Confirm email" (for this learning project, so users can log in immediately after signup).
-4. Open **Project Settings → API** and copy the **Project URL** and the **anon/public key**.
+2. In the dashboard, open **SQL Editor → New query**, paste the entire contents of [`supabase/schema.sql`](supabase/schema.sql), and run it. This creates the base tables (`profiles`, `posts`), RLS policies, the signup trigger, and the `avatars` + `post-images` storage buckets.
+3. Run [`supabase/migration_v2.sql`](supabase/migration_v2.sql) the same way. This adds the college configuration, College IDs, verification, likes, and the tightened RLS rules described above. **Check the seeded college email domain in that file (`rkgit.edu.in`) and change it if your college uses a different student email domain** — one `UPDATE` on the `colleges` table is enough.
+4. Open **Authentication → Providers → Email** and turn **ON** "Confirm email" (students must confirm their college email).
+5. Open **Authentication → URL Configuration**: set **Site URL** to your site URL (e.g. `https://arvindkushwaha55.github.io/campora/`) and add these **Redirect URLs** so email links land back in the app:
+   - `https://arvindkushwaha55.github.io/campora/**`
+   - `http://localhost:3000/**` (for local development)
+6. Open **Project Settings → API** and copy the **Project URL** and the **anon/public key**.
 
 ### 3. Configure environment variables
 
@@ -77,6 +120,23 @@ npm run build      # production build (static export into out/)
 npm run typecheck  # TypeScript check without emitting files
 ```
 
+## Admin setup
+
+Admins approve new students, so at least one admin account is needed:
+
+1. Sign up in the app normally with your own college email and College ID (or create the user in **Supabase → Authentication → Users**).
+2. In the **SQL Editor**, run (replace the email with the admin's):
+
+```sql
+update public.profiles
+set is_admin = true, verification_status = 'approved'
+where id = (select id from auth.users where email = 'admin@example.com');
+```
+
+3. Log in — an **Admin** item appears in the navigation, opening the Verification Desk at `/admin`.
+
+Day-to-day verification work (approving/rejecting students) happens in the app, not in SQL. To change the configured college or its email domain later, update the `colleges` table from the SQL Editor.
+
 ## Deployment
 
 - **GitHub Pages:** pushes to `main` run `.github/workflows/deploy-pages.yml`, which builds the static export and deploys it.
@@ -85,28 +145,42 @@ npm run typecheck  # TypeScript check without emitting files
   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - The workflow passes them into the build automatically.
 
-## Project Structure
+## Project structure
 
 ```
 campora/
 ├── src/
-│   ├── app/            # routes: / (feed), /login, /signup, /profile
-│   ├── components/     # shell (nav), feed (composer, post card), common (auth helpers)
+│   ├── app/            # routes: / (landing + feed), /login, /signup,
+│   │                   # /forgot-password, /reset-password, /profile,
+│   │                   # /students (discovery), /admin (verification desk)
+│   ├── components/     # shell (nav), landing, feed (composer, post card),
+│   │                   # common (auth gate, verification screen, inputs)
 │   └── lib/            # supabase.ts (client), auth.tsx (session context), constants.ts
 ├── supabase/
-│   └── schema.sql      # tables, RLS policies, storage buckets — run once in Supabase
+│   ├── schema.sql         # v1 base schema — run first
+│   └── migration_v2.sql   # college verification, likes, tightened RLS — run second
 ├── scripts/
-│   └── verify_backend.py  # API checks: signup, RLS and storage rules (see file header)
-├── .github/workflows/  # GitHub Pages deployment
-└── .env.example        # required environment variables (placeholders only)
+│   └── verify_backend.py  # API checks for the v1 rules (auth/RLS/storage)
+├── .github/workflows/     # GitHub Pages deployment
+└── .env.example           # required environment variables (placeholders only)
 ```
 
-## Current Limitations
+## Testing
 
-- One shared campus feed for all users (no per-college separation yet)
-- No password-reset flow in the UI yet (passwords can be reset via Supabase if needed)
-- Email confirmation is disabled for simplicity in this learning project
-- Sample/demo accounts you create are real rows in your own Supabase project — delete them from the Supabase dashboard if you want a clean start
+Verified during development: TypeScript typecheck and the production build pass; the SQL migration is verified by querying the live project structure (tables, columns, policies, triggers) after running it.
+
+Honest notes:
+
+- End-to-end tests of the full signup → email confirmation → admin approval → posting flow require real email inboxes and an admin account, so they are done manually against the deployed site after setup.
+- `scripts/verify_backend.py` covers the v1 API surface (signup/login, RLS impersonation blocks, storage rules). It predates the v2 verification rules.
+
+## Current limitations
+
+- One college is configured (the schema allows more later, the UI assumes one).
+- College ID verification is a manual admin review — there is no official college database/API to check against automatically.
+- Supabase's built-in free email sending has low rate limits, which can slow down confirmation/reset emails when many students sign up at once.
+- Like counts are computed in the browser from the `likes` table (fine at campus scale).
+- The live site runs the version on `main`; newer work lands on feature branches first and is merged after review.
 
 ## Author
 
