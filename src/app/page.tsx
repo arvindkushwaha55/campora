@@ -1,258 +1,196 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { PROFILES, SPOTS, type Spot } from "@/lib/data";
-import { useCamporaStore, type FeedEvent } from "@/lib/store";
-import { MobileNav, Sidebar, TopBar, type View } from "@/components/shell";
-import { Composer, FeedSection, PostCard } from "@/components/feed";
-import { EventModal, EventsPanel, ProfileView, PulsePanel } from "@/components/panels";
-import { SearchIcon, XIcon } from "@/components/icons";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { FEED_PAGE_SIZE, type Post } from "@/lib/constants";
+import { useAuth } from "@/lib/auth";
+import { AppShell } from "@/components/shell";
+import { LoadingScreen, NotConfigured, VerificationScreen } from "@/components/common";
+import { Landing } from "@/components/landing";
+import { Composer, PostCard } from "@/components/feed";
 
-type SearchType = "all" | "posts" | "events" | "spots";
+const POST_SELECT =
+  "id, user_id, text, image_url, created_at, profiles(full_name, avatar_url, course, year)";
 
-export default function HomePage() {
-  const store = useCamporaStore();
-  const [view, setView] = useState<View>("feed");
-  const [profileId, setProfileId] = useState<string>("you");
-  const [spot, setSpot] = useState<Spot | "All">("All");
-  const [query, setQuery] = useState("");
-  const [searchType, setSearchType] = useState<SearchType>("all");
-  const [selectedEvent, setSelectedEvent] = useState<FeedEvent | null>(null);
-  const [toast, setToast] = useState("");
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const composerRef = useRef<HTMLTextAreaElement | null>(null);
+function Feed() {
+  const { user } = useAuth();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
+  const [myLikes, setMyLikes] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [error, setError] = useState("");
+  const pageRef = useRef(0);
 
-  function showToast(msg: string) {
-    setToast(msg);
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(""), 4500);
-  }
+  const loadLikes = useCallback(
+    async (newPosts: Post[]) => {
+      if (!supabase || newPosts.length === 0) return;
+      const ids = newPosts.map((p) => p.id);
+      const { data } = await supabase.from("likes").select("post_id, user_id").in("post_id", ids);
+      if (!data) return;
+      setLikeCounts((prev) => {
+        const next = { ...prev };
+        for (const id of ids) next[id] = 0;
+        for (const row of data) next[row.post_id] = (next[row.post_id] ?? 0) + 1;
+        return next;
+      });
+      setMyLikes((prev) => {
+        const next = new Set(prev);
+        for (const row of data) if (row.user_id === user?.id) next.add(row.post_id);
+        return next;
+      });
+    },
+    [user?.id]
+  );
+
+  const loadPage = useCallback(
+    async (page: number, append: boolean) => {
+      if (!supabase) return;
+      const from = page * FEED_PAGE_SIZE;
+      const { data, error: loadError } = await supabase
+        .from("posts")
+        .select(POST_SELECT)
+        .order("created_at", { ascending: false })
+        .range(from, from + FEED_PAGE_SIZE - 1);
+      if (loadError) {
+        if (!append) setError("Could not load the feed. Please try again.");
+        return;
+      }
+      const rows = (data as unknown as Post[]) ?? [];
+      setHasMore(rows.length === FEED_PAGE_SIZE);
+      setPosts((prev) => (append ? [...prev, ...rows] : rows));
+      pageRef.current = page;
+      await loadLikes(rows);
+    },
+    [loadLikes]
+  );
+
+  const reload = useCallback(async () => {
+    setError("");
+    setLoading(true);
+    await loadPage(0, false);
+    setLoading(false);
+  }, [loadPage]);
 
   useEffect(() => {
-    return () => {
-      if (toastTimer.current) clearTimeout(toastTimer.current);
-    };
-  }, []);
+    void reload();
+  }, [reload]);
 
-  function openProfile(authorId: string) {
-    setProfileId(authorId);
-    setView("profile");
-    window.scrollTo({ top: 0 });
+  async function toggleLike(post: Post) {
+    if (!supabase || !user) return;
+    const liked = myLikes.has(post.id);
+    // Optimistic update; reverted if the database call fails.
+    setMyLikes((prev) => {
+      const next = new Set(prev);
+      if (liked) next.delete(post.id);
+      else next.add(post.id);
+      return next;
+    });
+    setLikeCounts((prev) => ({
+      ...prev,
+      [post.id]: Math.max(0, (prev[post.id] ?? 0) + (liked ? -1 : 1)),
+    }));
+    const { error: likeError } = liked
+      ? await supabase.from("likes").delete().eq("post_id", post.id).eq("user_id", user.id)
+      : await supabase.from("likes").insert({ post_id: post.id, user_id: user.id });
+    if (likeError) {
+      setMyLikes((prev) => {
+        const next = new Set(prev);
+        if (liked) next.add(post.id);
+        else next.delete(post.id);
+        return next;
+      });
+      setLikeCounts((prev) => ({
+        ...prev,
+        [post.id]: Math.max(0, (prev[post.id] ?? 0) + (liked ? 1 : -1)),
+      }));
+    }
   }
-
-  function focusComposer() {
-    setView("feed");
-    setQuery("");
-    window.scrollTo({ top: 0 });
-    setTimeout(() => composerRef.current?.focus(), 60);
-  }
-
-  const q = query.trim().toLowerCase();
-  const searching = q.length > 0;
-
-  const matchingPosts = useMemo(() => {
-    if (!searching) return [];
-    return store.posts.filter((p) =>
-      [PROFILES[p.authorId].name, p.text, p.spot].join(" ").toLowerCase().includes(q)
-    );
-  }, [store.posts, q, searching]);
-
-  const matchingEvents = useMemo(() => {
-    if (!searching) return [];
-    return store.events.filter((e) =>
-      [e.title, e.description, e.spot, e.category].join(" ").toLowerCase().includes(q)
-    );
-  }, [store.events, q, searching]);
-
-  const matchingSpots = useMemo(() => {
-    if (!searching) return [];
-    return SPOTS.filter((s) => s.toLowerCase().includes(q));
-  }, [q, searching]);
-
-  // Keep the open event modal in sync with store state (e.g. Interested count)
-  const liveSelectedEvent = selectedEvent
-    ? (store.events.find((e) => e.id === selectedEvent.id) ?? null)
-    : null;
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar view={view} onNavigate={setView} onCreate={focusComposer} />
+    <div className="flex flex-col gap-4">
+      <Composer onPosted={reload} />
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar onProfile={() => openProfile("you")} />
+      <section aria-label="Campus feed" className="flex flex-col gap-4">
+        <h2 className="text-lg font-bold text-slate-900">Campus Feed</h2>
 
-        <div className="mx-auto flex w-full max-w-6xl flex-1 gap-6 px-4 pb-24 pt-4 sm:pt-6 lg:pb-10">
-          <main className="min-w-0 flex-1">
-            {!store.hydrated ? (
-              <div className="flex flex-col gap-4" aria-label="Loading">
-                <div className="h-36 animate-pulse rounded-2xl bg-slate-200/70" />
-                <div className="h-56 animate-pulse rounded-2xl bg-slate-200/70" />
-                <div className="h-56 animate-pulse rounded-2xl bg-slate-200/70" />
-              </div>
-            ) : view === "profile" ? (
-              <ProfileView
-                profileId={profileId}
-                posts={store.posts}
-                store={store}
-                onBack={() => setView("feed")}
-                onOpenProfile={openProfile}
-                onToast={showToast}
+        {loading ? (
+          <LoadingScreen label="Loading the feed" />
+        ) : error ? (
+          <div className="rounded-2xl border border-dashed border-red-200 bg-white px-4 py-8 text-center">
+            <p className="text-sm text-red-600">{error}</p>
+            <button
+              type="button"
+              onClick={reload}
+              className="mt-3 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50"
+            >
+              Try again
+            </button>
+          </div>
+        ) : posts.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center">
+            <p className="font-semibold text-slate-700">No posts yet</p>
+            <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
+              The campus feed is empty. Be the first to share an update using the box above.
+            </p>
+          </div>
+        ) : (
+          <>
+            {posts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                likeCount={likeCounts[post.id] ?? 0}
+                likedByMe={myLikes.has(post.id)}
+                onToggleLike={toggleLike}
+                onDeleted={(id) => setPosts((prev) => prev.filter((p) => p.id !== id))}
               />
-            ) : view === "events" ? (
-              <EventsPanel events={store.events} store={store} onOpen={setSelectedEvent} full />
-            ) : (
-              <div className="flex flex-col gap-4">
-                <div>
-                  <div className="relative">
-                    <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-slate-400" />
-                    <label className="sr-only" htmlFor="campora-search">Search posts, events, and campus spots</label>
-                    <input
-                      id="campora-search"
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                      placeholder="Search posts, events, campus spots..."
-                      className="w-full rounded-full border border-slate-200 bg-white py-2.5 pl-10 pr-10 text-[15px] shadow-[0_1px_3px_rgba(15,23,42,0.05)] outline-none placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                    />
-                    {searching && (
-                      <button
-                        type="button"
-                        onClick={() => setQuery("")}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-                        aria-label="Clear search"
-                      >
-                        <XIcon className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-                  {searching && (
-                    <div className="mt-2.5 flex gap-1.5" role="group" aria-label="Search in">
-                      {(["all", "posts", "events", "spots"] as const).map((t) => (
-                        <button
-                          key={t}
-                          type="button"
-                          onClick={() => setSearchType(t)}
-                          aria-pressed={searchType === t}
-                          className={`rounded-full border px-3 py-1 text-[13px] font-medium capitalize transition-colors ${
-                            searchType === t
-                              ? "border-indigo-600 bg-indigo-600 text-white"
-                              : "border-slate-200 bg-white text-slate-600 hover:border-indigo-300"
-                          }`}
-                        >
-                          {t}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {searching ? (
-                  <section aria-label="Search results" className="flex flex-col gap-5">
-                    <h2 className="text-lg font-bold text-slate-900">
-                      Results for &ldquo;{query.trim()}&rdquo;
-                    </h2>
-                    {(searchType === "all" || searchType === "posts") && (
-                      <div className="flex flex-col gap-4">
-                        <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
-                          Posts · {matchingPosts.length}
-                        </h3>
-                        {matchingPosts.length === 0 ? (
-                          <p className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-6 text-center text-sm text-slate-500">
-                            No posts match your search.
-                          </p>
-                        ) : (
-                          matchingPosts.map((p) => (
-                            <PostCard key={p.id} post={p} store={store} onOpenProfile={openProfile} onToast={showToast} />
-                          ))
-                        )}
-                      </div>
-                    )}
-                    {(searchType === "all" || searchType === "events") && (
-                      <div className="flex flex-col gap-3">
-                        <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
-                          Events · {matchingEvents.length}
-                        </h3>
-                        {matchingEvents.length === 0 ? (
-                          <p className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-6 text-center text-sm text-slate-500">
-                            No events match your search.
-                          </p>
-                        ) : (
-                          <EventsPanel events={matchingEvents} store={store} onOpen={setSelectedEvent} />
-                        )}
-                      </div>
-                    )}
-                    {(searchType === "all" || searchType === "spots") && matchingSpots.length > 0 && (
-                      <div className="flex flex-col gap-3">
-                        <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
-                          Campus Spots · {matchingSpots.length}
-                        </h3>
-                        <div className="flex flex-wrap gap-1.5">
-                          {matchingSpots.map((s) => (
-                            <button
-                              key={s}
-                              type="button"
-                              onClick={() => {
-                                setSpot(s);
-                                setQuery("");
-                              }}
-                              className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-sm font-medium text-slate-700 hover:border-indigo-300 hover:text-indigo-700"
-                            >
-                              {s} — view posts
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </section>
-                ) : (
-                  <>
-                    <Composer store={store} onToast={showToast} textareaRef={composerRef} />
-                    <FeedSection
-                      posts={store.posts}
-                      store={store}
-                      spot={spot}
-                      onSpotChange={setSpot}
-                      onOpenProfile={openProfile}
-                      onToast={showToast}
-                    />
-                  </>
-                )}
-
-                <footer className="pt-2 text-center text-[13px] leading-relaxed text-slate-400">
-                  Campora — a personal mini project, Work in Progress. Frontend demo with sample
-                  data; your posts and interactions are stored only in this browser.
-                </footer>
-              </div>
+            ))}
+            {hasMore && (
+              <button
+                type="button"
+                disabled={loadingMore}
+                onClick={async () => {
+                  setLoadingMore(true);
+                  await loadPage(pageRef.current + 1, true);
+                  setLoadingMore(false);
+                }}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-60"
+              >
+                {loadingMore ? "Loading..." : "Load more posts"}
+              </button>
             )}
-          </main>
+          </>
+        )}
+      </section>
 
-          {view !== "profile" && (
-            <div className="hidden w-80 shrink-0 flex-col gap-4 xl:flex">
-              <PulsePanel
-                posts={store.posts}
-                events={store.events}
-                onOpenProfile={openProfile}
-                onOpenEvent={setSelectedEvent}
-              />
-              <EventsPanel events={store.events} store={store} onOpen={setSelectedEvent} />
-            </div>
-          )}
-        </div>
-      </div>
-
-      <MobileNav view={view} onNavigate={setView} onCreate={focusComposer} />
-
-      {liveSelectedEvent && (
-        <EventModal event={liveSelectedEvent} store={store} onClose={() => setSelectedEvent(null)} />
-      )}
-
-      {toast && (
-        <div
-          role="status"
-          className="fixed bottom-20 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-xl bg-slate-900 px-4 py-3 text-center text-sm font-medium text-white shadow-lg lg:bottom-6"
-        >
-          {toast}
-        </div>
-      )}
+      <footer className="pt-2 text-center text-[13px] leading-relaxed text-slate-400">
+        Campora — a personal mini project, Work in Progress. Posts are shared with other
+        verified students of your college.
+      </footer>
     </div>
+  );
+}
+
+export default function HomePage() {
+  const { user, profile, loading } = useAuth();
+
+  if (!isSupabaseConfigured) return <NotConfigured />;
+  if (loading || (user && !profile)) {
+    return (
+      <div className="mx-auto w-full max-w-3xl px-4 pt-6">
+        <LoadingScreen />
+      </div>
+    );
+  }
+  if (!user) return <Landing />;
+  if (profile && !profile.is_admin && profile.verification_status !== "approved") {
+    return <VerificationScreen profile={profile} />;
+  }
+  return (
+    <AppShell>
+      <Feed />
+    </AppShell>
   );
 }

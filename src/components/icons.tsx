@@ -63,44 +63,55 @@ export const PlusIcon = (p: SVGProps<SVGSVGElement>) => (
   <svg {...base(p)}><path d="M12 5v14" /><path d="M5 12h14" /></svg>
 );
 
-export function CoverGlyph({ icon }: { icon: string }) {
-  const common = { className: "h-10 w-10", strokeWidth: 1.5 };
-  switch (icon) {
-    case "library":
-      return (<svg {...base(common)}><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" /></svg>);
-    case "robot":
-      return (<svg {...base(common)}><rect x="4" y="8" width="16" height="12" rx="2" /><path d="M12 8V4" /><circle cx="12" cy="3" r="1" /><circle cx="9" cy="13" r="0.5" /><circle cx="15" cy="13" r="0.5" /><path d="M9 17h6" /></svg>);
-    case "code":
-      return (<svg {...base(common)}><path d="m16 18 6-6-6-6" /><path d="m8 6-6 6 6 6" /></svg>);
-    case "food":
-      return (<svg {...base(common)}><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" /><path d="M7 2v20" /><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" /></svg>);
-    case "trophy":
-      return (<svg {...base(common)}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /><path d="M4 22h16" /><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" /><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" /><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" /></svg>);
-    default:
-      return (<svg {...base(common)}><circle cx="12" cy="12" r="9" /></svg>);
-  }
-}
+export const ImageIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>
+);
+export const LogOutIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /></svg>
+);
+export const CameraIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3" /></svg>
+);
+export const ShieldIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}><path d="M12 22s8-3.6 8-10V5l-8-3-8 3v7c0 6.4 8 10 8 10z" /><path d="m9 11.5 2 2 4-4" /></svg>
+);
 
-export function Avatar({
+// Round avatar: the user's uploaded photo when available, otherwise initials.
+export function ProfileAvatar({
   name,
-  color,
+  avatarUrl,
   size = "md",
 }: {
   name: string;
-  color: string;
+  avatarUrl?: string | null;
   size?: "sm" | "md" | "lg";
 }) {
-  const initials = name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
   const cls =
     size === "lg"
       ? "h-16 w-16 text-xl"
       : size === "sm"
         ? "h-8 w-8 text-[11px]"
         : "h-10 w-10 text-[13px]";
+  if (avatarUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={avatarUrl}
+        alt=""
+        className={`shrink-0 rounded-full object-cover ${cls}`}
+        aria-hidden="true"
+      />
+    );
+  }
+  const initials = name
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
   return (
     <span
-      className={`grid shrink-0 select-none place-items-center rounded-full font-bold text-white ${cls}`}
-      style={{ backgroundColor: color }}
+      className={`grid shrink-0 select-none place-items-center rounded-full bg-indigo-500 font-bold text-white ${cls}`}
       aria-hidden="true"
     >
       {initials}
