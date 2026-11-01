@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import {
   COURSES,
+  MAX_BIO_LENGTH,
   MAX_IMAGE_SIZE_BYTES,
   YEARS,
   type Post,
@@ -69,7 +70,7 @@ function OtherProfile({ id }: { id: string }) {
       if (!supabase) return;
       const { data } = await supabase
         .from("profiles")
-        .select("id, full_name, course, year, avatar_url, created_at")
+        .select("id, full_name, course, year, avatar_url, bio, verification_status, is_admin, created_at")
         .eq("id", id)
         .single();
       setProfile((data as Profile) ?? null);
@@ -102,6 +103,9 @@ function OtherProfile({ id }: { id: string }) {
             <p className="text-sm text-slate-500">
               {profile.course} · {profile.year} year
             </p>
+            {profile.bio && (
+              <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{profile.bio}</p>
+            )}
           </div>
         </div>
       </section>
@@ -117,11 +121,31 @@ function MyProfile() {
   const [fullName, setFullName] = useState("");
   const [course, setCourse] = useState<string>(COURSES[0]);
   const [year, setYear] = useState<string>(YEARS[0]);
+  const [bio, setBio] = useState("");
+  const [collegeId, setCollegeId] = useState<string | null>(null);
   const [avatar, setAvatar] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState("");
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Your own College ID lives in the private table — only you (and admins)
+  // can read it. Shown on your own profile so you can check it.
+  useEffect(() => {
+    if (!supabase || !profile) return;
+    let active = true;
+    supabase
+      .from("student_private")
+      .select("college_id")
+      .eq("user_id", profile.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (active) setCollegeId(data?.college_id ?? null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [profile]);
 
   if (!profile || !user) return <LoadingScreen label="Loading your profile" />;
 
@@ -130,6 +154,7 @@ function MyProfile() {
     setFullName(profile.full_name);
     setCourse(profile.course);
     setYear(profile.year);
+    setBio(profile.bio ?? "");
     setAvatar(null);
     setAvatarPreview(profile.avatar_url ?? "");
     setError("");
@@ -182,7 +207,7 @@ function MyProfile() {
       }
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ full_name: name, course, year, avatar_url: avatarUrl })
+        .update({ full_name: name, course, year, bio: bio.trim() || null, avatar_url: avatarUrl })
         .eq("id", user.id);
       if (updateError) throw new Error("Could not save your profile. Please try again.");
       await refreshProfile();
@@ -206,6 +231,31 @@ function MyProfile() {
               {profile.course} · {profile.year} year
             </p>
             <p className="text-sm text-slate-500">{user.email}</p>
+            <span
+              className={`mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                profile.verification_status === "approved"
+                  ? "bg-emerald-50 text-emerald-700"
+                  : profile.verification_status === "rejected"
+                    ? "bg-red-50 text-red-700"
+                    : "bg-amber-50 text-amber-700"
+              }`}
+            >
+              {profile.verification_status === "approved"
+                ? "✓ Verified student"
+                : profile.verification_status === "rejected"
+                  ? "Verification not approved"
+                  : "Verification pending"}
+              {profile.is_admin ? " · Admin" : ""}
+            </span>
+            {collegeId && (
+              <p className="mt-1.5 text-sm text-slate-500">
+                College ID: <span className="font-mono font-semibold text-slate-700">{collegeId}</span>{" "}
+                <span className="text-xs text-slate-400">(only you can see this)</span>
+              </p>
+            )}
+            {profile.bio && (
+              <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{profile.bio}</p>
+            )}
           </div>
           {!editing && (
             <button
@@ -253,6 +303,19 @@ function MyProfile() {
                   ))}
                 </select>
               </div>
+            </div>
+            <div>
+              <label className={labelClass} htmlFor="profile-bio">Bio (optional)</label>
+              <textarea
+                id="profile-bio"
+                rows={2}
+                maxLength={MAX_BIO_LENGTH}
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="A line about you — branch, interests, anything."
+                className={`${inputClass} resize-none`}
+              />
+              <p className="mt-1 text-right text-xs text-slate-400">{bio.length}/{MAX_BIO_LENGTH}</p>
             </div>
             <ProfileAvatarInput preview={avatarPreview} name={fullName || profile.full_name} onPick={pickAvatar} />
             {error && (
