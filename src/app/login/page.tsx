@@ -84,6 +84,11 @@ export default function LoginPage() {
           {submitting ? "Logging in..." : "Log in"}
         </button>
       </form>
+      <p className="mt-4 text-center text-sm">
+        <Link href="/forgot-password" className="font-medium text-slate-500 hover:text-indigo-700 hover:underline">
+          Forgot your password?
+        </Link>
+      </p>
       <p className="mt-5 text-center text-sm text-slate-500">
         New to Campora?{" "}
         <Link href="/signup" className="font-semibold text-indigo-700 hover:underline">
