@@ -29,6 +29,7 @@ Privacy by design: College IDs are stored in a separate private table (`student_
 - **Verification-pending screen** — unverified students see their verification status, not the feed.
 - **Profiles** — photo, name, course, year, and a short bio (up to 160 characters). Edit your own details and picture; view other verified students' profiles and their posts.
 - **Campus feed** — text posts (up to 1000 characters) with an optional image, newest first, with author name/photo, course/year and timestamp. Loads in pages of 10 with "Load more". Posts are stored in the database, so they survive refresh and re-login.
+- **Dark theme** — a light/dark toggle (landing page, auth pages, sidebar and mobile top bar). The first visit follows the system preference; the choice is remembered on the device and applied before the page paints, so there is no flash of the wrong theme.
 - **Likes** — like/unlike any post; real counts from the database; the database primary key makes duplicate likes from the same student impossible.
 - **Student discovery** — search verified students by name, filter by course and year.
 - **Delete your own posts** — including their uploaded image.
