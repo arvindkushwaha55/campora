@@ -72,6 +72,9 @@ export const LogOutIcon = (p: SVGProps<SVGSVGElement>) => (
 export const CameraIcon = (p: SVGProps<SVGSVGElement>) => (
   <svg {...base(p)}><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3" /></svg>
 );
+export const ShieldIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}><path d="M12 22s8-3.6 8-10V5l-8-3-8 3v7c0 6.4 8 10 8 10z" /><path d="m9 11.5 2 2 4-4" /></svg>
+);
 
 // Round avatar: the user's uploaded photo when available, otherwise initials.
 export function ProfileAvatar({
