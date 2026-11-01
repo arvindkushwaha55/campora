@@ -5,7 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { MAX_IMAGE_SIZE_BYTES, MAX_POST_LENGTH, type Post } from "@/lib/constants";
-import { ImageIcon, ProfileAvatar, TrashIcon, XIcon } from "./icons";
+import { HeartIcon, ImageIcon, ProfileAvatar, TrashIcon, XIcon } from "./icons";
 
 export function formatDateTime(iso: string) {
   return new Date(iso).toLocaleString("en-IN", {
@@ -164,9 +164,15 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
 export function PostCard({
   post,
   onDeleted,
+  likeCount = 0,
+  likedByMe = false,
+  onToggleLike,
 }: {
   post: Post;
   onDeleted: (id: string) => void;
+  likeCount?: number;
+  likedByMe?: boolean;
+  onToggleLike?: (post: Post) => void;
 }) {
   const { user } = useAuth();
   const [confirming, setConfirming] = useState(false);
@@ -250,6 +256,24 @@ export function PostCard({
           className="mt-3 max-h-96 w-full rounded-xl object-cover"
           loading="lazy"
         />
+      )}
+
+      {onToggleLike && (
+        <div className="mt-3 flex items-center gap-2 border-t border-slate-100 pt-3">
+          <button
+            type="button"
+            onClick={() => onToggleLike(post)}
+            aria-pressed={likedByMe}
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold transition-colors ${
+              likedByMe
+                ? "bg-rose-50 text-rose-600"
+                : "text-slate-500 hover:bg-rose-50 hover:text-rose-600"
+            }`}
+          >
+            <HeartIcon className="h-4.5 w-4.5" fill={likedByMe ? "currentColor" : "none"} />
+            {likeCount} {likeCount === 1 ? "Like" : "Likes"}
+          </button>
+        </div>
       )}
 
       {error && (
