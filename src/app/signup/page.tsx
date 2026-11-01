@@ -3,15 +3,17 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { isSupabaseConfigured, siteUrl, supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { COURSES, MAX_IMAGE_SIZE_BYTES, YEARS } from "@/lib/constants";
-import { AuthCard, NotConfigured, ProfileAvatarInput, inputClass, labelClass } from "@/components/common";
+import { AuthCard, NotConfigured, ProfileAvatarInput, inputClass, labelClass, useCollege } from "@/components/common";
 
 export default function SignupPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
+  const college = useCollege();
   const [fullName, setFullName] = useState("");
+  const [collegeId, setCollegeId] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [course, setCourse] = useState<string>(COURSES[0]);
@@ -58,8 +60,20 @@ export default function SignupPage() {
       setError("Please enter your full name.");
       return;
     }
+    const cid = collegeId.trim();
+    if (cid.length < 3) {
+      setError("Please enter your College ID / enrollment number.");
+      return;
+    }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       setError("Please enter a valid email address.");
+      return;
+    }
+    // Friendly early warning only — the database trigger enforces the same
+    // domain rule on the server side, so it cannot be bypassed.
+    const domain = college?.email_domain?.trim().toLowerCase();
+    if (domain && email.trim().toLowerCase().split("@")[1] !== domain) {
+      setError(`Please use your college email address (@${domain}).`);
       return;
     }
     if (password.length < 6) {
@@ -68,10 +82,21 @@ export default function SignupPage() {
     }
 
     setSubmitting(true);
+    // Early duplicate warning (the unique College ID index is the real lock).
+    const { data: available } = await supabase.rpc("college_id_available", { cid });
+    if (available === false) {
+      setSubmitting(false);
+      setError("This College ID is already registered. If it is yours, please log in instead.");
+      return;
+    }
+
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: { data: { full_name: name, course, year } },
+      options: {
+        data: { full_name: name, course, year, college_id: cid },
+        emailRedirectTo: siteUrl("/"),
+      },
     });
 
     if (signUpError) {
@@ -80,18 +105,20 @@ export default function SignupPage() {
       setError(
         msg.includes("already") || msg.includes("registered")
           ? "An account with this email already exists. Please log in instead."
-          : "Could not create the account. Please try again."
+          : msg.includes("database error")
+            ? "Signup was rejected by the server. Please check that you used your college email address and a valid, unused College ID."
+            : "Could not create the account. Please try again."
       );
       return;
     }
 
-    // Email confirmation is disabled for this project, so a session normally
-    // comes straight back. If it does not, the account still exists and the
-    // user just needs to confirm via email and log in.
+    // With email confirmation ON, signup returns no session: the student
+    // confirms the email first, then waits for admin approval of the
+    // College ID. Say exactly that instead of pretending we are logged in.
     if (!data.session || !data.user) {
       setSubmitting(false);
       setNotice(
-        "Account created. If a confirmation email arrives, confirm it first — then log in."
+        "Account created. Please confirm your email from the link we sent you, then log in — an admin will verify your College ID before your feed unlocks."
       );
       return;
     }
@@ -115,7 +142,14 @@ export default function SignupPage() {
   }
 
   return (
-    <AuthCard title="Create your account" subtitle="Join Campora with your college details.">
+    <AuthCard
+      title="Create your account"
+      subtitle={
+        college
+          ? `For ${college.name} students only — your College ID will be verified by an admin.`
+          : "Join Campora with your college details."
+      }
+    >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
         <div>
           <label className={labelClass} htmlFor="signup-name">Full name</label>
@@ -130,14 +164,29 @@ export default function SignupPage() {
           />
         </div>
         <div>
-          <label className={labelClass} htmlFor="signup-email">Email</label>
+          <label className={labelClass} htmlFor="signup-college-id">College ID / Enrollment number</label>
+          <input
+            id="signup-college-id"
+            type="text"
+            autoComplete="off"
+            value={collegeId}
+            onChange={(e) => setCollegeId(e.target.value)}
+            placeholder="e.g. 2500331530079"
+            className={inputClass}
+          />
+          <p className="mt-1 text-xs text-slate-400">
+            Kept private — other students never see your College ID.
+          </p>
+        </div>
+        <div>
+          <label className={labelClass} htmlFor="signup-email">College email</label>
           <input
             id="signup-email"
             type="email"
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
+            placeholder={college?.email_domain ? `you@${college.email_domain}` : "you@college.edu"}
             className={inputClass}
           />
         </div>
