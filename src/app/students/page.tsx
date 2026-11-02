@@ -65,7 +65,7 @@ function Discovery() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-xl font-bold text-slate-900 dark:text-slate-50">Discover students</h1>
+        <h1 className="text-[26px] font-extrabold tracking-tight text-slate-900 dark:text-slate-50">Discover students</h1>
         <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
           Verified students of your college. Search by name, or filter by course and year.
         </p>
@@ -87,7 +87,7 @@ function Discovery() {
           value={course}
           onChange={(e) => setCourse(e.target.value)}
           aria-label="Filter by course"
-          className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 px-3 py-2.5 text-[15px] text-slate-900 dark:text-slate-50 outline-none focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100 sm:w-44"
+          className={`${inputClass} sm:w-44`}
         >
           <option value="">All courses</option>
           {COURSES.map((c) => (
@@ -98,7 +98,7 @@ function Discovery() {
           value={year}
           onChange={(e) => setYear(e.target.value)}
           aria-label="Filter by year"
-          className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 px-3 py-2.5 text-[15px] text-slate-900 dark:text-slate-50 outline-none focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100 sm:w-40"
+          className={`${inputClass} sm:w-40`}
         >
           <option value="">All years</option>
           {YEARS.map((y) => (
@@ -110,11 +110,11 @@ function Discovery() {
       {loading ? (
         <LoadingScreen label="Loading students" />
       ) : error ? (
-        <p role="alert" className="rounded-2xl border border-dashed border-red-200 bg-white dark:bg-slate-900 px-4 py-8 text-center text-sm text-red-600">
+        <p role="alert" className="rounded-3xl border border-dashed border-red-200 bg-white dark:bg-slate-900 px-4 py-8 text-center text-sm text-red-600">
           {error}
         </p>
       ) : others.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-10 text-center">
+        <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-10 text-center">
           <p className="font-semibold text-slate-700 dark:text-slate-200">No students found</p>
           <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400">
             {query || course || year
@@ -128,9 +128,11 @@ function Discovery() {
             <li key={s.id}>
               <Link
                 href={`/profile?id=${s.id}`}
-                className="flex items-center gap-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)] transition hover:shadow-md"
+                className="flex items-center gap-3.5 rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)] transition-all hover:-translate-y-0.5 hover:shadow-lg"
               >
-                <ProfileAvatar name={s.full_name} avatarUrl={s.avatar_url} size="lg" />
+                <span className="shrink-0 rounded-full ring-2 ring-pink-100 dark:ring-pink-500/25">
+                  <ProfileAvatar name={s.full_name} avatarUrl={s.avatar_url} size="lg" />
+                </span>
                 <span className="min-w-0">
                   <span className="block truncate font-semibold text-slate-900 dark:text-slate-50">{s.full_name}</span>
                   <span className="block text-sm text-slate-500 dark:text-slate-400">
