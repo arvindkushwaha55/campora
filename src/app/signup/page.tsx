@@ -99,12 +99,14 @@ export default function SignupPage() {
     }
 
     // With email confirmation ON, signup returns no session: the student
-    // confirms the email first; the account is active immediately
-    // account. Say exactly that instead of pretending we are logged in.
+    // confirms the email first, and the account is active immediately
+    // after that. Say exactly that instead of pretending we are logged in.
+    // (A profile picture chosen here cannot be uploaded without a session,
+    // so point the student to their profile for it.)
     if (!data.session || !data.user) {
       setSubmitting(false);
       setNotice(
-        "Account created. Please confirm your email from the link we sent you, then log in — your campus feed unlocks as soon as your email is confirmed."
+        "Account created. Please confirm your email from the link we sent you, then log in — your campus feed unlocks as soon as your email is confirmed. You can add your profile photo from your profile page after logging in."
       );
       return;
     }
@@ -212,7 +214,7 @@ export default function SignupPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 shadow-sm px-4 py-2.5 text-[15px] font-semibold text-white transition-colors hover:from-indigo-700 hover:to-violet-700 disabled:opacity-60"
+          className="rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 shadow-md shadow-indigo-600/20 px-4 py-3 text-[15px] font-semibold text-white transition-all hover:from-indigo-700 hover:to-violet-700 active:scale-[0.98] disabled:opacity-60"
         >
           {submitting ? "Creating account..." : "Create account"}
         </button>
