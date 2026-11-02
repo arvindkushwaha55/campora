@@ -65,15 +65,15 @@ function Discovery() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-xl font-bold text-slate-900">Discover students</h1>
-        <p className="mt-0.5 text-sm text-slate-500">
+        <h1 className="text-xl font-bold text-slate-900 dark:text-slate-50">Discover students</h1>
+        <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
           Verified students of your college. Search by name, or filter by course and year.
         </p>
       </div>
 
       <div className="flex flex-col gap-2.5 sm:flex-row">
         <div className="relative flex-1">
-          <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400" />
+          <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
           <input
             type="search"
             value={query}
@@ -87,7 +87,7 @@ function Discovery() {
           value={course}
           onChange={(e) => setCourse(e.target.value)}
           aria-label="Filter by course"
-          className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[15px] text-slate-900 outline-none focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100 sm:w-44"
+          className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 px-3 py-2.5 text-[15px] text-slate-900 dark:text-slate-50 outline-none focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100 sm:w-44"
         >
           <option value="">All courses</option>
           {COURSES.map((c) => (
@@ -98,7 +98,7 @@ function Discovery() {
           value={year}
           onChange={(e) => setYear(e.target.value)}
           aria-label="Filter by year"
-          className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[15px] text-slate-900 outline-none focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100 sm:w-40"
+          className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 px-3 py-2.5 text-[15px] text-slate-900 dark:text-slate-50 outline-none focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100 sm:w-40"
         >
           <option value="">All years</option>
           {YEARS.map((y) => (
@@ -110,13 +110,13 @@ function Discovery() {
       {loading ? (
         <LoadingScreen label="Loading students" />
       ) : error ? (
-        <p role="alert" className="rounded-2xl border border-dashed border-red-200 bg-white px-4 py-8 text-center text-sm text-red-600">
+        <p role="alert" className="rounded-2xl border border-dashed border-red-200 bg-white dark:bg-slate-900 px-4 py-8 text-center text-sm text-red-600">
           {error}
         </p>
       ) : others.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center">
-          <p className="font-semibold text-slate-700">No students found</p>
-          <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
+        <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-10 text-center">
+          <p className="font-semibold text-slate-700 dark:text-slate-200">No students found</p>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400">
             {query || course || year
               ? "Try a different search or clear the filters."
               : "No other verified students yet — invite your classmates to join."}
@@ -128,15 +128,15 @@ function Discovery() {
             <li key={s.id}>
               <Link
                 href={`/profile?id=${s.id}`}
-                className="flex items-center gap-3.5 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.05)] transition hover:shadow-md"
+                className="flex items-center gap-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-[0_1px_3px_rgba(15,23,42,0.05)] transition hover:shadow-md"
               >
                 <ProfileAvatar name={s.full_name} avatarUrl={s.avatar_url} size="lg" />
                 <span className="min-w-0">
-                  <span className="block truncate font-semibold text-slate-900">{s.full_name}</span>
-                  <span className="block text-sm text-slate-500">
+                  <span className="block truncate font-semibold text-slate-900 dark:text-slate-50">{s.full_name}</span>
+                  <span className="block text-sm text-slate-500 dark:text-slate-400">
                     {s.course} · {s.year} year
                   </span>
-                  {s.bio && <span className="mt-0.5 block truncate text-sm text-slate-400">{s.bio}</span>}
+                  {s.bio && <span className="mt-0.5 block truncate text-sm text-slate-400 dark:text-slate-500">{s.bio}</span>}
                 </span>
               </Link>
             </li>
