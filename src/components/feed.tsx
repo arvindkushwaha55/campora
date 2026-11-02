@@ -1,11 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
-import { MAX_IMAGE_SIZE_BYTES, MAX_POST_LENGTH, type Post } from "@/lib/constants";
-import { HeartIcon, ImageIcon, ProfileAvatar, TrashIcon, XIcon } from "./icons";
+import { MAX_IMAGE_SIZE_BYTES, MAX_POST_LENGTH, cardClass, type Post } from "@/lib/constants";
+import { DotsIcon, HeartIcon, ImageIcon, ProfileAvatar, TrashIcon, XIcon } from "./icons";
 
 export function formatDateTime(iso: string) {
   return new Date(iso).toLocaleString("en-IN", {
@@ -31,6 +31,13 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
   const [error, setError] = useState("");
   const [posting, setPosting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Release the object URL of the previous preview whenever it is replaced
+  // or the composer unmounts, so picked photos do not linger in memory.
+  useEffect(() => {
+    if (!preview) return;
+    return () => URL.revokeObjectURL(preview);
+  }, [preview]);
 
   function pickImage(file: File | null) {
     setError("");
@@ -92,12 +99,14 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
 
   return (
     <section
-      className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)]"
+      className={`${cardClass} p-5`}
       aria-label="Create a post"
     >
       <div className="flex gap-3">
         {profile && (
-          <ProfileAvatar name={profile.full_name} avatarUrl={profile.avatar_url} />
+          <span className="h-fit shrink-0 rounded-full ring-2 ring-pink-100 dark:ring-pink-500/25">
+            <ProfileAvatar name={profile.full_name} avatarUrl={profile.avatar_url} />
+          </span>
         )}
         <textarea
           value={text}
@@ -147,7 +156,7 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
           type="button"
           onClick={submit}
           disabled={posting}
-          className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 shadow-sm px-5 py-2 text-sm font-semibold text-white transition-colors hover:from-indigo-700 hover:to-violet-700 disabled:opacity-60"
+          className="rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 shadow-md shadow-indigo-600/20 px-6 py-2 text-sm font-semibold text-white transition-all hover:from-indigo-700 hover:to-violet-700 active:scale-95 disabled:opacity-60"
         >
           {posting ? "Posting..." : "Post"}
         </button>
@@ -175,13 +184,37 @@ export function PostCard({
   onToggleLike?: (post: Post) => void;
 }) {
   const { user, profile } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [pop, setPop] = useState(false);
   const [error, setError] = useState("");
   const mine = user?.id === post.user_id;
   // Admins moderate the feed: they can delete anyone's post (RLS allows it).
   const canDelete = mine || profile?.is_admin === true;
   const author = post.profiles;
+
+  // Escape closes the options menu, like a native menu.
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setMenuOpen(false);
+        setConfirming(false);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
+
+  function handleLikeClick() {
+    if (!onToggleLike) return;
+    if (!likedByMe) {
+      setPop(true);
+      window.setTimeout(() => setPop(false), 320);
+    }
+    onToggleLike(post);
+  }
 
   async function handleDelete() {
     if (!supabase) return;
@@ -201,9 +234,13 @@ export function PostCard({
   }
 
   return (
-    <article className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)]">
+    <article className={`${cardClass} p-5`}>
       <header className="flex items-start gap-3">
-        <Link href={`/profile?id=${post.user_id}`} className="rounded-full" aria-label={`Open ${author?.full_name ?? "student"}'s profile`}>
+        <Link
+          href={`/profile?id=${post.user_id}`}
+          className="shrink-0 rounded-full ring-2 ring-pink-100 dark:ring-pink-500/25"
+          aria-label={`Open ${author?.full_name ?? "student"}'s profile`}
+        >
           <ProfileAvatar name={author?.full_name ?? "?"} avatarUrl={author?.avatar_url} />
         </Link>
         <div className="min-w-0 flex-1">
@@ -217,62 +254,96 @@ export function PostCard({
             {author ? (author.is_guest ? "Guest" : `${author.course} · ${author.year} year`) : ""} · {formatDateTime(post.created_at)}
           </p>
         </div>
-        {canDelete &&
-          (confirming ? (
-            <span className="flex shrink-0 items-center gap-1">
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={deleting}
-                className="rounded-full px-2.5 py-1.5 text-[13px] font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
-              >
-                {deleting ? "Deleting..." : "Confirm delete"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirming(false)}
-                className="rounded-full px-2.5 py-1.5 text-[13px] text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
-              >
-                Cancel
-              </button>
-            </span>
-          ) : (
+        {canDelete && (
+          <div className="relative shrink-0">
             <button
               type="button"
-              onClick={() => setConfirming(true)}
-              className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-[13px] text-slate-400 dark:text-slate-500 hover:bg-red-50 hover:text-red-600"
-              aria-label={mine ? "Delete my post" : "Delete this post (admin)"}
+              onClick={() => {
+                setMenuOpen((o) => !o);
+                setConfirming(false);
+              }}
+              className="grid h-8 w-8 place-items-center rounded-full text-slate-400 dark:text-slate-500 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300"
+              aria-label="Post options"
+              aria-expanded={menuOpen}
             >
-              <TrashIcon className="h-4 w-4" /> Delete
+              <DotsIcon className="h-5 w-5" />
             </button>
-          ))}
+            {menuOpen && (
+              <>
+                <button
+                  type="button"
+                  aria-hidden="true"
+                  tabIndex={-1}
+                  className="fixed inset-0 z-10 cursor-default"
+                  onClick={() => setMenuOpen(false)}
+                />
+                <div className="absolute right-0 z-20 mt-1 w-52 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-1.5 shadow-xl shadow-slate-900/10">
+                  {confirming ? (
+                    <div className="px-2 py-1.5">
+                      <p className="text-[13px] font-medium text-slate-700 dark:text-slate-200">Delete this post?</p>
+                      <div className="mt-2 flex gap-1.5">
+                        <button
+                          type="button"
+                          onClick={handleDelete}
+                          disabled={deleting}
+                          className="flex-1 rounded-lg bg-red-600 px-2.5 py-1.5 text-[13px] font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-60"
+                        >
+                          {deleting ? "Deleting..." : "Delete"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirming(false)}
+                          className="flex-1 rounded-lg px-2.5 py-1.5 text-[13px] font-medium text-slate-600 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
+                        >
+                          Keep it
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setConfirming(true)}
+                      className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-400/10"
+                    >
+                      <TrashIcon className="h-4 w-4" /> Delete post
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </header>
 
-      <p className="mt-2 whitespace-pre-wrap text-[15px] leading-relaxed text-slate-800 dark:text-slate-100">{post.text}</p>
+      <p className="mt-2.5 whitespace-pre-wrap text-[15px] leading-relaxed text-slate-800 dark:text-slate-100">{post.text}</p>
 
       {post.image_url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={post.image_url}
-          alt="Photo attached to this post"
-          className="mt-3 max-h-96 w-full rounded-xl object-cover"
-          loading="lazy"
-        />
+        <div className="mt-3.5 overflow-hidden rounded-2xl">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={post.image_url}
+            alt="Photo attached to this post"
+            className="max-h-96 w-full object-cover transition-transform duration-500 hover:scale-[1.015]"
+            loading="lazy"
+          />
+        </div>
       )}
 
       {onToggleLike && (
-        <div className="mt-3 flex items-center gap-2 border-t border-slate-100 dark:border-slate-800 pt-3">
+        <div className="mt-3.5 flex items-center gap-2 border-t border-slate-100 dark:border-slate-800 pt-3">
           <button
             type="button"
-            onClick={() => onToggleLike(post)}
+            onClick={handleLikeClick}
             aria-pressed={likedByMe}
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold transition-colors ${
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold transition-all active:scale-95 ${
               likedByMe
                 ? "bg-rose-50 dark:bg-rose-400/10 text-rose-600"
                 : "text-slate-500 dark:text-slate-400 hover:bg-rose-50 hover:text-rose-600"
             }`}
           >
-            <HeartIcon className="h-4.5 w-4.5" fill={likedByMe ? "currentColor" : "none"} />
+            <span className={pop ? "inline-flex animate-[pop_0.3s_ease]" : "inline-flex"}>
+              <HeartIcon className="h-4.5 w-4.5" fill={likedByMe ? "currentColor" : "none"} />
+            </span>
             {likeCount} {likeCount === 1 ? "Like" : "Likes"}
           </button>
         </div>

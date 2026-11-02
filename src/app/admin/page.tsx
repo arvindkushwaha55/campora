@@ -4,12 +4,11 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import type { Post } from "@/lib/constants";
+import { POST_COLUMNS, attachAuthors, type PostRow } from "@/lib/posts";
 import { AppShell } from "@/components/shell";
 import { AuthGate, LoadingScreen } from "@/components/common";
 import { PostCard } from "@/components/feed";
 import { ShieldIcon } from "@/components/icons";
-
-const POST_COLUMNS = "id, user_id, text, image_url, created_at";
 
 /**
  * Admin moderation page. Accounts no longer need approval (owner's
@@ -47,30 +46,8 @@ function Moderation() {
       setLoading(false);
       return;
     }
-    const rows = (data as unknown as Omit<Post, "profiles">[]) ?? [];
-    let profilesById = new Map<string, NonNullable<Post["profiles"]>>();
-    const authorIds = [...new Set(rows.map((r) => r.user_id))];
-    if (authorIds.length > 0) {
-      const { data: authors } = await supabase
-        .from("profiles")
-        .select("id, full_name, avatar_url, course, year, is_guest")
-        .in("id", authorIds);
-      if (authors) {
-        profilesById = new Map(
-          authors.map((a) => [
-            a.id,
-            {
-              full_name: a.full_name,
-              avatar_url: a.avatar_url,
-              course: a.course,
-              year: a.year,
-              is_guest: a.is_guest,
-            },
-          ])
-        );
-      }
-    }
-    setPosts(rows.map((r) => ({ ...r, profiles: profilesById.get(r.user_id) ?? null })));
+    const rows = (data as unknown as PostRow[]) ?? [];
+    setPosts(await attachAuthors(rows));
     setLoading(false);
   }, []);
 
@@ -81,7 +58,7 @@ function Moderation() {
 
   if (!profile?.is_admin) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-12 text-center">
+      <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-12 text-center">
         <span className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
           <ShieldIcon className="h-5 w-5" />
         </span>
@@ -97,7 +74,7 @@ function Moderation() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="flex items-center gap-2 text-xl font-bold text-slate-900 dark:text-slate-50">
+        <h1 className="flex items-center gap-2 text-[26px] font-extrabold tracking-tight text-slate-900 dark:text-slate-50">
           <ShieldIcon className="h-5.5 w-5.5 text-indigo-600 dark:text-indigo-400" /> Moderation
         </h1>
         <p className="mt-0.5 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
@@ -115,7 +92,7 @@ function Moderation() {
       {loading ? (
         <LoadingScreen label="Loading posts" />
       ) : posts.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-10 text-center">
+        <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-10 text-center">
           <p className="font-semibold text-slate-700 dark:text-slate-200">No posts yet</p>
           <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400">
             When students start posting, every post will appear here for moderation.
