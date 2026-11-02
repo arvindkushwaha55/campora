@@ -4,9 +4,113 @@
    script in the root layout) activates every dark: variant. */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * Campora design tokens — "Editorial Campus" direction (2026-11-02).
+ *
+ * The whole product is re-skinned from this one block: the Tailwind
+ * palette names the components already use are re-mapped to a warm,
+ * editorial system —
+ *   indigo / violet / sky  -> electric cobalt (primary)
+ *   pink / rose / fuchsia  -> coral (secondary accent, likes, highlights)
+ *   slate                  -> warm stone neutrals (surfaces, ink text)
+ * Surfaces are warm ivory in light mode and warm ink in dark mode.
+ * Status colours (emerald, amber, red) are intentionally untouched.
+ */
 @theme {
   --font-sans: "Plus Jakarta Sans", ui-sans-system, system-ui, -apple-system,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Fraunces", "Georgia", serif;
+
+  /* Electric cobalt */
+  --color-indigo-50: #eef1ff;
+  --color-indigo-100: #dce2ff;
+  --color-indigo-200: #b9c4ff;
+  --color-indigo-300: #8b9dff;
+  --color-indigo-400: #5d76ff;
+  --color-indigo-500: #2f4bff;
+  --color-indigo-600: #2038e8;
+  --color-indigo-700: #1b2fb8;
+  --color-indigo-800: #18278f;
+  --color-indigo-900: #141f66;
+  --color-indigo-950: #0c1138;
+
+  /* Deep ink-blue (was violet) */
+  --color-violet-50: #f0f0fa;
+  --color-violet-100: #ddddf2;
+  --color-violet-200: #bcbce6;
+  --color-violet-300: #9494d8;
+  --color-violet-400: #6c6cc4;
+  --color-violet-500: #4a4aa8;
+  --color-violet-600: #37378c;
+  --color-violet-700: #2c2c70;
+  --color-violet-800: #222256;
+  --color-violet-900: #181840;
+  --color-violet-950: #0e0e2a;
+
+  /* Coral tints (was pink) */
+  --color-pink-50: #fff5f1;
+  --color-pink-100: #ffe3d9;
+  --color-pink-200: #ffc9b8;
+  --color-pink-300: #ffa88f;
+  --color-pink-400: #ff7a54;
+  --color-pink-500: #ff5c39;
+  --color-pink-600: #f04a26;
+  --color-pink-700: #c93a1e;
+  --color-pink-800: #a0311c;
+  --color-pink-900: #842c1b;
+  --color-pink-950: #471207;
+
+  /* Coral strong (was rose) */
+  --color-rose-50: #fff3ef;
+  --color-rose-100: #ffe4db;
+  --color-rose-200: #ffc7b5;
+  --color-rose-300: #ffa182;
+  --color-rose-400: #ff7350;
+  --color-rose-500: #f9502b;
+  --color-rose-600: #e23a1b;
+  --color-rose-700: #bc2e15;
+  --color-rose-800: #962714;
+  --color-rose-900: #7a2415;
+  --color-rose-950: #430f06;
+
+  /* Fuchsia follows the ink-blue family */
+  --color-fuchsia-50: #f0f0fa;
+  --color-fuchsia-100: #ddddf2;
+  --color-fuchsia-200: #bcbce6;
+  --color-fuchsia-300: #9494d8;
+  --color-fuchsia-400: #6c6cc4;
+  --color-fuchsia-500: #4a4aa8;
+  --color-fuchsia-600: #37378c;
+  --color-fuchsia-700: #2c2c70;
+  --color-fuchsia-800: #222256;
+  --color-fuchsia-900: #181840;
+  --color-fuchsia-950: #0e0e2a;
+
+  /* Sky follows cobalt */
+  --color-sky-50: #eef1ff;
+  --color-sky-100: #dce2ff;
+  --color-sky-200: #b9c4ff;
+  --color-sky-300: #8b9dff;
+  --color-sky-400: #5d76ff;
+  --color-sky-500: #2f4bff;
+  --color-sky-600: #2038e8;
+  --color-sky-700: #1b2fb8;
+  --color-sky-800: #18278f;
+  --color-sky-900: #141f66;
+  --color-sky-950: #0c1138;
+
+  /* Warm stone neutrals (was slate) */
+  --color-slate-50: #fafaf9;
+  --color-slate-100: #f5f5f4;
+  --color-slate-200: #e7e5e4;
+  --color-slate-300: #d6d3d1;
+  --color-slate-400: #a8a29e;
+  --color-slate-500: #78716c;
+  --color-slate-600: #57534e;
+  --color-slate-700: #44403c;
+  --color-slate-800: #292524;
+  --color-slate-900: #1c1917;
+  --color-slate-950: #0c0a09;
 }
 
 html {
@@ -14,39 +118,35 @@ html {
 }
 
 body {
-  background-color: #f6f7f9;
-  /* Soft brand glows at the top of every page (baby pink + indigo) */
-  background-image:
-    radial-gradient(640px 320px at 12% -60px, rgba(244, 114, 182, 0.13), transparent 70%),
-    radial-gradient(760px 360px at 92% -80px, rgba(99, 102, 241, 0.11), transparent 70%);
-  background-attachment: fixed;
-  background-repeat: no-repeat;
-  color: #0f172a;
+  /* Warm ivory with a faint dotted "campus map" grid — Campora's
+     signature background treatment. */
+  background-color: #faf6ef;
+  background-image: radial-gradient(rgba(28, 25, 23, 0.055) 1px, transparent 1.4px);
+  background-size: 22px 22px;
+  color: #1c1917;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 .dark body {
-  background-color: #020617;
-  background-image:
-    radial-gradient(640px 320px at 12% -60px, rgba(244, 114, 182, 0.07), transparent 70%),
-    radial-gradient(760px 360px at 92% -80px, rgba(99, 102, 241, 0.13), transparent 70%);
-  color: #f1f5f9;
+  background-color: #0b0a08;
+  background-image: radial-gradient(rgba(250, 246, 239, 0.05) 1px, transparent 1.4px);
+  color: #f5f0e8;
 }
 
 ::selection {
-  background-color: #fbcfe8;
+  background-color: #ffc9b8;
 }
 
 .dark ::selection {
-  background-color: #9d174d;
+  background-color: #bc2e15;
   color: #ffffff;
 }
 
 /* Visible keyboard focus everywhere, without mouse-focus noise */
 :focus-visible {
-  outline: 2px solid #6366f1;
+  outline: 2px solid #2f4bff;
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -58,14 +158,14 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #cbd5e1;
-  border: 2px solid #f6f7f9;
+  background-color: #d6d3d1;
+  border: 2px solid #faf6ef;
   border-radius: 8px;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background-color: #334155;
-  border-color: #020617;
+  background-color: #44403c;
+  border-color: #0b0a08;
 }
 
 @keyframes rise {
@@ -103,6 +203,56 @@ body {
   }
 }
 
+/* Landing ticker: a slow editorial marquee of real campus phrases */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 36s linear infinite;
+}
+
+/* Photo reveal on post cards: a soft settle as the image loads in */
+@keyframes reveal {
+  from {
+    opacity: 0.4;
+    transform: scale(1.02);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.img-reveal {
+  animation: reveal 0.6s ease both;
+}
+
+/* Editorial hard shadow for hero compositions (solid offset, no blur) */
+.shadow-hard {
+  box-shadow: 10px 10px 0 rgba(28, 25, 23, 0.9);
+}
+
+.dark .shadow-hard {
+  box-shadow: 10px 10px 0 rgba(47, 75, 255, 0.45);
+}
+
+/* Ink band with a faint route-line pattern, for profile covers and
+   other signature surfaces: two crossing "campus paths". */
+.band-ink {
+  background-color: #1c1917;
+  background-image:
+    linear-gradient(115deg, transparent 0 46%, rgba(250, 246, 239, 0.07) 46% 47.5%, transparent 47.5%),
+    linear-gradient(24deg, transparent 0 62%, rgba(250, 246, 239, 0.05) 62% 63.5%, transparent 63.5%),
+    radial-gradient(rgba(250, 246, 239, 0.09) 1px, transparent 1.4px);
+  background-size: auto, auto, 22px 22px;
+}
+
 /* Respect users who prefer reduced motion */
 @media (prefers-reduced-motion: reduce) {
   html {
@@ -124,9 +274,9 @@ article {
 }
 
 article:hover {
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 8px 24px rgba(28, 25, 23, 0.1);
 }
 
 .dark article:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
 }
