@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
-import { AuthCard, NotConfigured, inputClass, labelClass } from "@/components/common";
+import { AuthCard, NotConfigured, PasswordInput, inputClass, labelClass } from "@/components/common";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -63,14 +63,12 @@ export default function LoginPage() {
         </div>
         <div>
           <label className={labelClass} htmlFor="login-password">Password</label>
-          <input
+          <PasswordInput
             id="login-password"
-            type="password"
             autoComplete="current-password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={setPassword}
             placeholder="Your password"
-            className={inputClass}
           />
         </div>
         {error && (
@@ -79,7 +77,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 shadow-sm px-4 py-2.5 text-[15px] font-semibold text-white transition-colors hover:from-indigo-700 hover:to-violet-700 disabled:opacity-60"
+          className="rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 shadow-md shadow-indigo-600/20 px-4 py-3 text-[15px] font-semibold text-white transition-all hover:from-indigo-700 hover:to-violet-700 active:scale-[0.98] disabled:opacity-60"
         >
           {submitting ? "Logging in..." : "Log in"}
         </button>
