@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
-import { AuthCard, NotConfigured, inputClass, labelClass } from "@/components/common";
+import { AuthCard, NotConfigured, PasswordInput, inputClass, labelClass } from "@/components/common";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -63,14 +63,12 @@ export default function LoginPage() {
         </div>
         <div>
           <label className={labelClass} htmlFor="login-password">Password</label>
-          <input
+          <PasswordInput
             id="login-password"
-            type="password"
             autoComplete="current-password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={setPassword}
             placeholder="Your password"
-            className={inputClass}
           />
         </div>
         {error && (
