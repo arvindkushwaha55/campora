@@ -18,32 +18,102 @@ import { AuthGate, LoadingScreen, ProfileAvatarInput, inputClass, labelClass } f
 import { PostCard } from "@/components/feed";
 import { ProfileAvatar } from "@/components/icons";
 
-const POST_SELECT =
-  "id, user_id, text, image_url, created_at, profiles(full_name, avatar_url, course, year)";
+const POST_COLUMNS = "id, user_id, text, image_url, created_at";
 
 function PostsList({ userId }: { userId: string }) {
+  const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
+  const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
+  const [myLikes, setMyLikes] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     if (!supabase) return;
+    // Two plain queries merged in the client — the same approach as the
+    // feed (a PostgREST embed for the author proved unreliable live).
     const { data } = await supabase
       .from("posts")
-      .select(POST_SELECT)
+      .select(POST_COLUMNS)
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
-    setPosts((data as unknown as Post[]) ?? []);
+    const rows = (data as unknown as Omit<Post, "profiles">[]) ?? [];
+    const { data: author } = await supabase
+      .from("profiles")
+      .select("full_name, avatar_url, course, year, is_guest")
+      .eq("id", userId)
+      .maybeSingle();
+    const merged: Post[] = rows.map((r) => ({
+      ...r,
+      profiles: author
+        ? {
+            full_name: author.full_name,
+            avatar_url: author.avatar_url,
+            course: author.course,
+            year: author.year,
+            is_guest: author.is_guest,
+          }
+        : null,
+    }));
+    setPosts(merged);
+    if (merged.length > 0) {
+      const ids = merged.map((post) => post.id);
+      const { data: likeRows } = await supabase
+        .from("likes")
+        .select("post_id, user_id")
+        .in("post_id", ids);
+      if (likeRows) {
+        const counts: Record<string, number> = {};
+        const mine = new Set<string>();
+        for (const id of ids) counts[id] = 0;
+        for (const row of likeRows) {
+          counts[row.post_id] = (counts[row.post_id] ?? 0) + 1;
+          if (row.user_id === user?.id) mine.add(row.post_id);
+        }
+        setLikeCounts(counts);
+        setMyLikes(mine);
+      }
+    }
     setLoading(false);
-  }, [userId]);
+  }, [userId, user?.id]);
 
   useEffect(() => {
     load();
   }, [load]);
 
+  async function toggleLike(post: Post) {
+    if (!supabase || !user) return;
+    const liked = myLikes.has(post.id);
+    setMyLikes((prev) => {
+      const next = new Set(prev);
+      if (liked) next.delete(post.id);
+      else next.add(post.id);
+      return next;
+    });
+    setLikeCounts((prev) => ({
+      ...prev,
+      [post.id]: Math.max(0, (prev[post.id] ?? 0) + (liked ? -1 : 1)),
+    }));
+    const { error: likeError } = liked
+      ? await supabase.from("likes").delete().eq("post_id", post.id).eq("user_id", user.id)
+      : await supabase.from("likes").insert({ post_id: post.id, user_id: user.id });
+    if (likeError) {
+      setMyLikes((prev) => {
+        const next = new Set(prev);
+        if (liked) next.add(post.id);
+        else next.delete(post.id);
+        return next;
+      });
+      setLikeCounts((prev) => ({
+        ...prev,
+        [post.id]: Math.max(0, (prev[post.id] ?? 0) + (liked ? 1 : -1)),
+      }));
+    }
+  }
+
   if (loading) return <LoadingScreen label="Loading posts" />;
   if (posts.length === 0) {
     return (
-      <p className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+      <p className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
         No posts yet.
       </p>
     );
@@ -54,6 +124,9 @@ function PostsList({ userId }: { userId: string }) {
         <PostCard
           key={post.id}
           post={post}
+          likeCount={likeCounts[post.id] ?? 0}
+          likedByMe={myLikes.has(post.id)}
+          onToggleLike={toggleLike}
           onDeleted={(id) => setPosts((prev) => prev.filter((p) => p.id !== id))}
         />
       ))}
@@ -70,7 +143,7 @@ function OtherProfile({ id }: { id: string }) {
       if (!supabase) return;
       const { data } = await supabase
         .from("profiles")
-        .select("id, full_name, course, year, avatar_url, bio, verification_status, is_admin, created_at")
+        .select("id, full_name, course, year, avatar_url, bio, verification_status, is_admin, is_guest, created_at")
         .eq("id", id)
         .single();
       setProfile((data as Profile) ?? null);
@@ -101,7 +174,7 @@ function OtherProfile({ id }: { id: string }) {
           <div className="min-w-0">
             <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50">{profile.full_name}</h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              {profile.course} · {profile.year} year
+              {profile.is_guest ? "Guest visitor" : `${profile.course} · ${profile.year} year`}
             </p>
             {profile.bio && (
               <p className="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{profile.bio}</p>
@@ -209,23 +282,29 @@ function MyProfile() {
           <div className="min-w-0 flex-1">
             <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50">{profile.full_name}</h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              {profile.course} · {profile.year} year
+              {profile.is_guest ? "Guest visitor" : `${profile.course} · ${profile.year} year`}
             </p>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{user.email}</p>
+            {user.email && (
+              <p className="text-sm text-slate-500 dark:text-slate-400">{user.email}</p>
+            )}
             <span
               className={`mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                profile.verification_status === "approved"
-                  ? "bg-emerald-50 dark:bg-emerald-400/10 text-emerald-700 dark:text-emerald-300"
-                  : profile.verification_status === "rejected"
-                    ? "bg-red-50 dark:bg-red-400/10 text-red-700 dark:text-red-300"
-                    : "bg-amber-50 dark:bg-amber-400/10 text-amber-700 dark:text-amber-300"
+                profile.is_guest
+                  ? "bg-amber-50 dark:bg-amber-400/10 text-amber-700 dark:text-amber-300"
+                  : profile.verification_status === "approved"
+                    ? "bg-emerald-50 dark:bg-emerald-400/10 text-emerald-700 dark:text-emerald-300"
+                    : profile.verification_status === "rejected"
+                      ? "bg-red-50 dark:bg-red-400/10 text-red-700 dark:text-red-300"
+                      : "bg-amber-50 dark:bg-amber-400/10 text-amber-700 dark:text-amber-300"
               }`}
             >
-              {profile.verification_status === "approved"
-                ? "✓ Verified student"
-                : profile.verification_status === "rejected"
-                  ? "Verification not approved"
-                  : "Verification pending"}
+              {profile.is_guest
+                ? "Guest"
+                : profile.verification_status === "approved"
+                  ? "✓ Verified student"
+                  : profile.verification_status === "rejected"
+                    ? "Verification not approved"
+                    : "Verification pending"}
               {profile.is_admin ? " · Admin" : ""}
             </span>
             {profile.bio && (
@@ -261,6 +340,7 @@ function MyProfile() {
                 className={inputClass}
               />
             </div>
+            {!profile.is_guest && (
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={labelClass} htmlFor="profile-course">Course</label>
@@ -279,6 +359,7 @@ function MyProfile() {
                 </select>
               </div>
             </div>
+            )}
             <div>
               <label className={labelClass} htmlFor="profile-bio">Bio (optional)</label>
               <textarea
