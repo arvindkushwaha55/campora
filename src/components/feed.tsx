@@ -174,11 +174,13 @@ export function PostCard({
   likedByMe?: boolean;
   onToggleLike?: (post: Post) => void;
 }) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
   const mine = user?.id === post.user_id;
+  // Admins moderate the feed: they can delete anyone's post (RLS allows it).
+  const canDelete = mine || profile?.is_admin === true;
   const author = post.profiles;
 
   async function handleDelete() {
@@ -215,7 +217,7 @@ export function PostCard({
             {author ? `${author.course} · ${author.year} year` : ""} · {formatDateTime(post.created_at)}
           </p>
         </div>
-        {mine &&
+        {canDelete &&
           (confirming ? (
             <span className="flex shrink-0 items-center gap-1">
               <button
@@ -239,7 +241,7 @@ export function PostCard({
               type="button"
               onClick={() => setConfirming(true)}
               className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-[13px] text-slate-400 dark:text-slate-500 hover:bg-red-50 hover:text-red-600"
-              aria-label="Delete my post"
+              aria-label={mine ? "Delete my post" : "Delete this post (admin)"}
             >
               <TrashIcon className="h-4 w-4" /> Delete
             </button>

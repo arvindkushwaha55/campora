@@ -81,8 +81,9 @@ export function Landing() {
             </span>
             <h2 className="mt-3 font-bold text-slate-900 dark:text-slate-50">Verified students only</h2>
             <p className="mt-1 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-              Sign up with your college email. An admin approves every account
-              before the feed unlocks — no outsiders, no fake profiles.
+              Sign up with your college email and confirm it — only students
+              of your college can get in, and the admin removes anything
+              that does not belong.
             </p>
           </div>
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)]">
@@ -112,7 +113,7 @@ export function Landing() {
           <div className="mx-auto mt-5 grid max-w-3xl gap-3 sm:grid-cols-3">
             {[
               { n: "1", t: "Sign up", d: "Use your college email, course and year." },
-              { n: "2", t: "Get verified", d: "Confirm your email, then an admin approves your account." },
+              { n: "2", t: "Get verified", d: "Confirm your email from the link we send you." },
               { n: "3", t: "Join the feed", d: "Your account unlocks — post, like and discover students." },
             ].map((s) => (
               <div key={s.n} className="flex items-start gap-3 rounded-2xl bg-white/60 dark:bg-slate-900/60 p-4">
