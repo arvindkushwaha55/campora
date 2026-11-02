@@ -3,51 +3,73 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
-import type { Profile } from "@/lib/constants";
+import type { Post } from "@/lib/constants";
 import { AppShell } from "@/components/shell";
 import { AuthGate, LoadingScreen } from "@/components/common";
-import { ProfileAvatar, ShieldIcon } from "@/components/icons";
+import { PostCard } from "@/components/feed";
+import { ShieldIcon } from "@/components/icons";
+
+const POST_COLUMNS = "id, user_id, text, image_url, created_at";
 
 /**
- * Admin verification desk. Only accounts with profiles.is_admin = true see
- * the pending list — and the database enforces the same rule (RLS + a
- * trigger), so this page alone cannot be used to approve anyone.
- * Admins are appointed manually in Supabase (see README → Admin setup).
+ * Admin moderation page. Accounts no longer need approval (owner's
+ * decision, 2026-11-02 — approving everyone by hand did not scale);
+ * instead the admin keeps the feed clean by deleting any post, here or
+ * directly in the feed. The database enforces the same rule: the
+ * "Admins can delete any post" RLS policy (migration_v4.sql).
  */
 export default function AdminPage() {
   return (
     <AuthGate>
       <AppShell>
-        <AdminDesk />
+        <Moderation />
       </AppShell>
     </AuthGate>
   );
 }
 
-type PendingStudent = Profile;
-
-function AdminDesk() {
+function Moderation() {
   const { profile } = useAuth();
-  const [pending, setPending] = useState<PendingStudent[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [decided, setDecided] = useState(0);
 
   const load = useCallback(async () => {
     if (!supabase) return;
     setError("");
+    // Two plain queries merged in the client — the same approach as the feed.
     const { data, error: loadError } = await supabase
-      .from("profiles")
-      .select("id, full_name, course, year, avatar_url, bio, verification_status, is_admin, created_at")
-      .eq("verification_status", "pending")
-      .order("created_at", { ascending: true });
+      .from("posts")
+      .select(POST_COLUMNS)
+      .order("created_at", { ascending: false });
     if (loadError) {
-      setError("Could not load verification requests.");
+      setError("Could not load posts. Please try again.");
       setLoading(false);
       return;
     }
-    setPending((data as Profile[]) ?? []);
+    const rows = (data as unknown as Omit<Post, "profiles">[]) ?? [];
+    let profilesById = new Map<string, NonNullable<Post["profiles"]>>();
+    const authorIds = [...new Set(rows.map((r) => r.user_id))];
+    if (authorIds.length > 0) {
+      const { data: authors } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url, course, year")
+        .in("id", authorIds);
+      if (authors) {
+        profilesById = new Map(
+          authors.map((a) => [
+            a.id,
+            {
+              full_name: a.full_name,
+              avatar_url: a.avatar_url,
+              course: a.course,
+              year: a.year,
+            },
+          ])
+        );
+      }
+    }
+    setPosts(rows.map((r) => ({ ...r, profiles: profilesById.get(r.user_id) ?? null })));
     setLoading(false);
   }, []);
 
@@ -55,23 +77,6 @@ function AdminDesk() {
     if (profile?.is_admin) void load();
     else setLoading(false);
   }, [profile?.is_admin, load]);
-
-  async function decide(student: PendingStudent, status: "approved" | "rejected") {
-    if (!supabase) return;
-    setBusyId(student.id);
-    setError("");
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({ verification_status: status })
-      .eq("id", student.id);
-    setBusyId(null);
-    if (updateError) {
-      setError("Could not save that decision. Please try again.");
-      return;
-    }
-    setPending((prev) => prev.filter((p) => p.id !== student.id));
-    setDecided((n) => n + 1);
-  }
 
   if (!profile?.is_admin) {
     return (
@@ -81,7 +86,7 @@ function AdminDesk() {
         </span>
         <p className="mt-3 font-semibold text-slate-700 dark:text-slate-200">Admins only</p>
         <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400">
-          This page is for Campora admins who verify new students. Your account
+          This page is for Campora admins who keep the feed clean. Your account
           does not have admin access.
         </p>
       </div>
@@ -91,77 +96,38 @@ function AdminDesk() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="flex items-center gap-2 text-xl font-bold text-slate-900 dark:text-slate-50">
-          <ShieldIcon className="h-5.5 w-5.5 text-indigo-600 dark:text-indigo-400" /> Verification desk
+        <h1 className="flex items-center gap-2 text-[26px] font-extrabold tracking-tight text-slate-900 dark:text-slate-50">
+          <ShieldIcon className="h-5.5 w-5.5 text-indigo-600 dark:text-indigo-400" /> Moderation
         </h1>
-        <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-          Review new signups and approve students of your college. Every account
-          already registered with a college email address — approve people you
-          recognize as students here.
+        <p className="mt-0.5 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+          Accounts no longer need approval — every student who confirms their
+          college email can post straight away. Your job is just to remove
+          anything that does not belong: use the delete option on any post
+          below, or directly in the feed.
         </p>
       </div>
 
-      {decided > 0 && (
-        <p role="status" className="rounded-lg bg-emerald-50 dark:bg-emerald-400/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300">
-          {decided} decision{decided === 1 ? "" : "s"} saved this session.
-        </p>
-      )}
       {error && (
         <p role="alert" className="rounded-lg bg-red-50 dark:bg-red-400/10 px-3 py-2 text-sm text-red-600">{error}</p>
       )}
 
       {loading ? (
-        <LoadingScreen label="Loading verification requests" />
-      ) : pending.length === 0 ? (
+        <LoadingScreen label="Loading posts" />
+      ) : posts.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-10 text-center">
-          <p className="font-semibold text-slate-700 dark:text-slate-200">No pending requests</p>
+          <p className="font-semibold text-slate-700 dark:text-slate-200">No posts yet</p>
           <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400">
-            Every signup has been reviewed. New students will appear here when they register.
+            When students start posting, every post will appear here for moderation.
           </p>
         </div>
       ) : (
-        <ul className="flex flex-col gap-3">
-          {pending.map((s) => (
-            <li
-              key={s.id}
-              className="flex flex-col gap-3 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)] sm:flex-row sm:items-center"
-            >
-              <div className="flex min-w-0 flex-1 items-center gap-3.5">
-                <ProfileAvatar name={s.full_name} avatarUrl={s.avatar_url} size="lg" />
-                <div className="min-w-0">
-                  <p className="truncate font-semibold text-slate-900 dark:text-slate-50">{s.full_name}</p>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">{s.course} · {s.year} year</p>
-                  <p className="text-xs text-slate-400 dark:text-slate-500">
-                    Signed up{" "}
-                    {new Date(s.created_at).toLocaleDateString("en-IN", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </p>
-                </div>
-              </div>
-              <div className="flex shrink-0 gap-2">
-                <button
-                  type="button"
-                  disabled={busyId === s.id}
-                  onClick={() => void decide(s, "approved")}
-                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:opacity-60"
-                >
-                  Approve
-                </button>
-                <button
-                  type="button"
-                  disabled={busyId === s.id}
-                  onClick={() => void decide(s, "rejected")}
-                  className="rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60"
-                >
-                  Reject
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
+        posts.map((post) => (
+          <PostCard
+            key={post.id}
+            post={post}
+            onDeleted={(id) => setPosts((prev) => prev.filter((p) => p.id !== id))}
+          />
+        ))
       )}
     </div>
   );
