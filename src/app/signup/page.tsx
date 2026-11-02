@@ -218,6 +218,11 @@ export default function SignupPage() {
         </button>
       </form>
       <p className="mt-5 text-center text-sm text-slate-500 dark:text-slate-400">
+        A teacher or just visiting?{" "}
+        <Link href="/login" className="font-semibold text-indigo-700 dark:text-indigo-300 hover:underline">
+          Continue as a guest
+        </Link>
+        <br />
         Already have an account?{" "}
         <Link href="/login" className="font-semibold text-indigo-700 dark:text-indigo-300 hover:underline">
           Log in

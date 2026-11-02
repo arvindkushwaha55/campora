@@ -53,7 +53,7 @@ function Moderation() {
     if (authorIds.length > 0) {
       const { data: authors } = await supabase
         .from("profiles")
-        .select("id, full_name, avatar_url, course, year")
+        .select("id, full_name, avatar_url, course, year, is_guest")
         .in("id", authorIds);
       if (authors) {
         profilesById = new Map(
@@ -64,6 +64,7 @@ function Moderation() {
               avatar_url: a.avatar_url,
               course: a.course,
               year: a.year,
+              is_guest: a.is_guest,
             },
           ])
         );

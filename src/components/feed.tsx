@@ -214,7 +214,7 @@ export function PostCard({
             {author?.full_name ?? "Student"}
           </Link>
           <p className="truncate text-[13px] text-slate-500 dark:text-slate-400">
-            {author ? `${author.course} · ${author.year} year` : ""} · {formatDateTime(post.created_at)}
+            {author ? (author.is_guest ? "Guest" : `${author.course} · ${author.year} year`) : ""} · {formatDateTime(post.created_at)}
           </p>
         </div>
         {canDelete &&

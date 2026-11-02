@@ -272,3 +272,73 @@ export function PasswordInput({
     </div>
   );
 }
+
+/**
+ * Guest entry for teachers and visitors: just a name, no college email,
+ * no password. Uses Supabase anonymous sign-ins — the account is created
+ * instantly, flagged is_guest by the signup trigger (migration_v5.sql),
+ * and labelled "Guest" everywhere. The session lives on this device.
+ */
+export function GuestEntry() {
+  const router = useRouter();
+  const [name, setName] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function enter() {
+    if (!supabase) return;
+    const value = name.trim();
+    if (value.length < 2) {
+      setError("Please enter your name.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    const { error: anonError } = await supabase.auth.signInAnonymously({
+      options: { data: { full_name: value, guest: true } },
+    });
+    if (anonError) {
+      setError("Guest entry is not available right now. Please use a student account instead.");
+      setBusy(false);
+      return;
+    }
+    router.replace("/");
+  }
+
+  return (
+    <div>
+      <h2 className="text-center text-[15px] font-bold text-slate-900 dark:text-slate-50">
+        Teachers &amp; guests
+      </h2>
+      <p className="mt-1 text-center text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+        Just looking around? Enter with only your name — no college email or
+        password needed. Your profile will be labelled “Guest”.
+      </p>
+      <div className="mt-3.5 flex flex-col gap-2.5">
+        <div>
+          <label className={labelClass} htmlFor="guest-name">Your name</label>
+          <input
+            id="guest-name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. Neha Tomar"
+            className={inputClass}
+            autoComplete="name"
+          />
+        </div>
+        {error && (
+          <p role="alert" className="text-sm text-red-600">{error}</p>
+        )}
+        <button
+          type="button"
+          onClick={enter}
+          disabled={busy}
+          className="rounded-lg border border-slate-200 dark:border-slate-800 px-4 py-2.5 text-[15px] font-semibold text-slate-700 dark:text-slate-200 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60"
+        >
+          {busy ? "Entering..." : "Continue as guest"}
+        </button>
+      </div>
+    </div>
+  );
+}

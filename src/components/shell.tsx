@@ -84,7 +84,7 @@ export function Sidebar() {
             <span className="min-w-0">
               <span className="block truncate text-sm font-semibold text-slate-900 dark:text-slate-50">{profile.full_name}</span>
               <span className="block truncate text-xs text-slate-500 dark:text-slate-400">
-                {profile.course} · {profile.year} year
+                {profile.is_guest ? "Guest" : `${profile.course} · ${profile.year} year`}
               </span>
             </span>
           </div>
