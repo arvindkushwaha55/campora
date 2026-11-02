@@ -26,6 +26,7 @@ Privacy by design: email addresses are **never** shown to other students — pro
 - **College-exclusive signup** — full name, college email (domain-checked), password, course (B.Tech / BCA / BBA / B.Pharmacy / Other), year (1st–4th / Other), optional profile picture.
 - **Login / logout / forgot password** — email + password auth (Supabase Auth), with a working password-reset flow by email.
 - **Instant access** — after email confirmation the feed unlocks right away; there is no approval queue.
+- **Guest entry** — teachers and visitors can enter from the login page with just a name (Supabase anonymous sign-ins; no email or password). Guest accounts are flagged `is_guest` and labelled “Guest” on their profile, posts and discovery cards; the session lives on that device.
 - **Profiles** — photo, name, course, year, and a short bio (up to 160 characters). Edit your own details and picture; view other verified students' profiles and their posts.
 - **Campus feed** — text posts (up to 1000 characters) with an optional image, newest first, with author name/photo, course/year and timestamp. Loads in pages of 10 with "Load more". Posts are stored in the database, so they survive refresh and re-login. On wide screens the feed gets a third column: a discovery rail with the college card and the newest verified students. Post cards have a like animation, an options menu for your own posts, and skeleton loading states.
 - **Profiles** — gradient cover header, verified badge, bio and the student’s posts with working likes.
@@ -89,11 +90,12 @@ npm install
 3. Run [`supabase/migration_v2.sql`](supabase/migration_v2.sql) the same way. This adds the college configuration, verification, likes, and the tightened RLS rules described above. **Check the seeded college email domain in that file (`rkgit.edu.in`) and change it if your college uses a different student email domain** — one `UPDATE` on the `colleges` table is enough.
 4. Run [`supabase/migration_v3.sql`](supabase/migration_v3.sql) the same way. This removes the College ID requirement from the signup trigger (email-only signup).
 5. Run [`supabase/migration_v4.sql`](supabase/migration_v4.sql) the same way. This makes accounts active immediately after email confirmation (no admin approval) and gives admins delete-any-post moderation rights.
-6. Open **Authentication → Providers → Email** and turn **ON** "Confirm email" (students must confirm their college email).
-7. Open **Authentication → URL Configuration**: set **Site URL** to your site URL (e.g. `https://arvindkushwaha55.github.io/campora/`) and add these **Redirect URLs** so email links land back in the app:
+6. Run [`supabase/migration_v5.sql`](supabase/migration_v5.sql) the same way. This adds the `is_guest` flag for guest accounts.
+7. Open **Authentication → Providers → Email** and turn **ON** "Confirm email" (students must confirm their college email). Also open **Authentication → Providers → Anonymous** and turn **ON** anonymous sign-ins, so the guest entry on the login page works.
+8. Open **Authentication → URL Configuration**: set **Site URL** to your site URL (e.g. `https://arvindkushwaha55.github.io/campora/`) and add these **Redirect URLs** so email links land back in the app:
    - `https://arvindkushwaha55.github.io/campora/**`
    - `http://localhost:3000/**` (for local development)
-8. Open **Project Settings → API** and copy the **Project URL** and the **anon/public key**.
+9. Open **Project Settings → API** and copy the **Project URL** and the **anon/public key**.
 
 ### 3. Configure environment variables
 
@@ -164,7 +166,8 @@ campora/
 │   ├── schema.sql         # v1 base schema — run first
 │   ├── migration_v2.sql   # college verification, likes, tightened RLS — run second
 │   ├── migration_v3.sql   # email-only signup (no College ID) — run third
-│   └── migration_v4.sql   # instant activation + admin moderation — run fourth
+│   ├── migration_v4.sql   # instant activation + admin moderation — run fourth
+│   └── migration_v5.sql   # guest accounts (is_guest flag) — run fifth
 ├── scripts/
 │   └── verify_backend.py  # API checks for the v1 rules (auth/RLS/storage)
 ├── .github/workflows/     # GitHub Pages deployment
