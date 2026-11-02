@@ -6,7 +6,7 @@ import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import type { College, Profile } from "@/lib/constants";
 import { Brand } from "./shell";
-import { CameraIcon, ProfileAvatar } from "./icons";
+import { CameraIcon, EyeIcon, EyeOffIcon, ProfileAvatar } from "./icons";
 import { ThemeToggle } from "./theme-toggle";
 
 /** Loads the configured college (name + approved email domain), if any. */
@@ -50,10 +50,24 @@ export function NotConfigured() {
 
 export function LoadingScreen({ label = "Loading..." }: { label?: string }) {
   return (
-    <div className="flex flex-col gap-4" aria-label={label}>
-      <div className="h-36 animate-pulse rounded-2xl bg-slate-200/70 dark:bg-slate-800" />
-      <div className="h-56 animate-pulse rounded-2xl bg-slate-200/70 dark:bg-slate-800" />
-      <div className="h-56 animate-pulse rounded-2xl bg-slate-200/70 dark:bg-slate-800" />
+    <div className="flex flex-col gap-4" aria-label={label} role="status">
+      {[0, 1].map((i) => (
+        <div
+          key={i}
+          className="animate-pulse rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5"
+        >
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-slate-200 dark:bg-slate-800" />
+            <div className="flex-1">
+              <div className="h-3.5 w-2/5 rounded bg-slate-200 dark:bg-slate-800" />
+              <div className="mt-2 h-3 w-3/5 rounded bg-slate-100 dark:bg-slate-800/70" />
+            </div>
+          </div>
+          <div className="mt-4 h-3.5 w-full rounded bg-slate-100 dark:bg-slate-800/70" />
+          <div className="mt-2 h-3.5 w-4/5 rounded bg-slate-100 dark:bg-slate-800/70" />
+          {i === 0 && <div className="mt-4 h-44 rounded-2xl bg-slate-100 dark:bg-slate-800/70" />}
+        </div>
+      ))}
     </div>
   );
 }
@@ -80,7 +94,9 @@ export function VerificationScreen({ profile }: { profile: Profile }) {
       <div className="absolute right-4 top-4">
         <ThemeToggle />
       </div>
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 text-center shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)]">
+      <div className="w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-center shadow-[0_1px_2px_rgba(15,23,42,0.05),0_24px_48px_-16px_rgba(15,23,42,0.22)]">
+        <div className="h-1.5 bg-gradient-to-r from-pink-400 via-rose-400 to-indigo-500" aria-hidden="true" />
+        <div className="p-6 sm:p-8">
         <div className="flex justify-center">
           <Brand />
         </div>
@@ -122,6 +138,7 @@ export function VerificationScreen({ profile }: { profile: Profile }) {
         >
           Log out
         </button>
+        </div>
       </div>
     </main>
   );
@@ -171,13 +188,16 @@ export function AuthCard({
       <div className="absolute right-4 top-4">
         <ThemeToggle />
       </div>
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)]">
-        <div className="flex justify-center">
-          <Brand />
+      <div className="w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_24px_48px_-16px_rgba(15,23,42,0.22)]">
+        <div className="h-1.5 bg-gradient-to-r from-pink-400 via-rose-400 to-indigo-500" aria-hidden="true" />
+        <div className="p-6 sm:p-8">
+          <div className="flex justify-center">
+            <Brand />
+          </div>
+          <h1 className="mt-5 text-center text-[22px] font-bold tracking-tight text-slate-900 dark:text-slate-50">{title}</h1>
+          <p className="mt-1 text-center text-sm leading-relaxed text-slate-500 dark:text-slate-400">{subtitle}</p>
+          <div className="mt-6">{children}</div>
         </div>
-        <h1 className="mt-5 text-center text-xl font-bold text-slate-900 dark:text-slate-50">{title}</h1>
-        <p className="mt-1 text-center text-sm text-slate-500 dark:text-slate-400">{subtitle}</p>
-        <div className="mt-6">{children}</div>
       </div>
       <p className="mt-4 text-center text-xs text-slate-400 dark:text-slate-500">
         Campora — a personal mini project, Work in Progress.
@@ -230,6 +250,45 @@ export function ProfileAvatarInput({
 }
 
 export const inputClass =
-  "w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 px-3 py-2.5 text-[15px] text-slate-900 dark:text-slate-50 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100";
+  "w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 px-3.5 py-2.5 text-[15px] text-slate-900 dark:text-slate-50 outline-none transition placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-400 focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-500/15";
+
+// Password field with a show/hide toggle, used by login, signup and reset.
+export function PasswordInput({
+  id,
+  value,
+  onChange,
+  placeholder,
+  autoComplete,
+}: {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  autoComplete?: string;
+}) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="relative">
+      <input
+        id={id}
+        type={visible ? "text" : "password"}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        className={`${inputClass} pr-11`}
+      />
+      <button
+        type="button"
+        onClick={() => setVisible((v) => !v)}
+        aria-label={visible ? "Hide password" : "Show password"}
+        aria-pressed={visible}
+        className="absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300"
+      >
+        {visible ? <EyeOffIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+      </button>
+    </div>
+  );
+}
 
 export const labelClass = "mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200";
