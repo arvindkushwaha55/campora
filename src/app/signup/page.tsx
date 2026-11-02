@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { isSupabaseConfigured, siteUrl, supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { COURSES, MAX_IMAGE_SIZE_BYTES, YEARS } from "@/lib/constants";
-import { AuthCard, NotConfigured, ProfileAvatarInput, inputClass, labelClass, useCollege } from "@/components/common";
+import { AuthCard, NotConfigured, PasswordInput, ProfileAvatarInput, inputClass, labelClass, useCollege } from "@/components/common";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -163,14 +163,12 @@ export default function SignupPage() {
         </div>
         <div>
           <label className={labelClass} htmlFor="signup-password">Password</label>
-          <input
+          <PasswordInput
             id="signup-password"
-            type="password"
             autoComplete="new-password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={setPassword}
             placeholder="At least 6 characters"
-            className={inputClass}
           />
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -214,7 +212,7 @@ export default function SignupPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 shadow-sm px-4 py-2.5 text-[15px] font-semibold text-white transition-colors hover:from-indigo-700 hover:to-violet-700 disabled:opacity-60"
+          className="rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 shadow-md shadow-indigo-600/20 px-4 py-3 text-[15px] font-semibold text-white transition-all hover:from-indigo-700 hover:to-violet-700 active:scale-[0.98] disabled:opacity-60"
         >
           {submitting ? "Creating account..." : "Create account"}
         </button>
