@@ -43,7 +43,7 @@ function PostsList({ userId }: { userId: string }) {
   if (loading) return <LoadingScreen label="Loading posts" />;
   if (posts.length === 0) {
     return (
-      <p className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-8 text-center text-sm text-slate-500">
+      <p className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
         No posts yet.
       </p>
     );
@@ -81,9 +81,9 @@ function OtherProfile({ id }: { id: string }) {
   if (loading) return <LoadingScreen label="Loading profile" />;
   if (!profile) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center">
-        <p className="font-semibold text-slate-700">Profile not found</p>
-        <Link href="/" className="mt-2 inline-block text-sm font-semibold text-indigo-700 hover:underline">
+      <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-10 text-center">
+        <p className="font-semibold text-slate-700 dark:text-slate-200">Profile not found</p>
+        <Link href="/" className="mt-2 inline-block text-sm font-semibold text-indigo-700 dark:text-indigo-300 hover:underline">
           Back to the feed
         </Link>
       </div>
@@ -92,24 +92,24 @@ function OtherProfile({ id }: { id: string }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <Link href="/" className="self-start rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-sm font-semibold text-slate-600 hover:text-slate-900">
+      <Link href="/" className="self-start rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-1.5 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900">
         ← Back to feed
       </Link>
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.05)]" aria-label={`${profile.full_name}'s profile`}>
+      <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-[0_1px_3px_rgba(15,23,42,0.05)]" aria-label={`${profile.full_name}'s profile`}>
         <div className="flex items-center gap-4">
           <ProfileAvatar name={profile.full_name} avatarUrl={profile.avatar_url} size="lg" />
           <div className="min-w-0">
-            <h2 className="text-xl font-bold text-slate-900">{profile.full_name}</h2>
-            <p className="text-sm text-slate-500">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50">{profile.full_name}</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               {profile.course} · {profile.year} year
             </p>
             {profile.bio && (
-              <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{profile.bio}</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{profile.bio}</p>
             )}
           </div>
         </div>
       </section>
-      <h3 className="text-lg font-bold text-slate-900">{profile.full_name.split(" ")[0]}&rsquo;s posts</h3>
+      <h3 className="text-lg font-bold text-slate-900 dark:text-slate-50">{profile.full_name.split(" ")[0]}&rsquo;s posts</h3>
       <PostsList userId={profile.id} />
     </div>
   );
@@ -222,22 +222,22 @@ function MyProfile() {
 
   return (
     <div className="flex flex-col gap-4">
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.05)]" aria-label="My profile">
+      <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-[0_1px_3px_rgba(15,23,42,0.05)]" aria-label="My profile">
         <div className="flex flex-wrap items-center gap-4">
           <ProfileAvatar name={profile.full_name} avatarUrl={profile.avatar_url} size="lg" />
           <div className="min-w-0 flex-1">
-            <h2 className="text-xl font-bold text-slate-900">{profile.full_name}</h2>
-            <p className="text-sm text-slate-500">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50">{profile.full_name}</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               {profile.course} · {profile.year} year
             </p>
-            <p className="text-sm text-slate-500">{user.email}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{user.email}</p>
             <span
               className={`mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-bold ${
                 profile.verification_status === "approved"
-                  ? "bg-emerald-50 text-emerald-700"
+                  ? "bg-emerald-50 dark:bg-emerald-400/10 text-emerald-700 dark:text-emerald-300"
                   : profile.verification_status === "rejected"
-                    ? "bg-red-50 text-red-700"
-                    : "bg-amber-50 text-amber-700"
+                    ? "bg-red-50 dark:bg-red-400/10 text-red-700 dark:text-red-300"
+                    : "bg-amber-50 dark:bg-amber-400/10 text-amber-700 dark:text-amber-300"
               }`}
             >
               {profile.verification_status === "approved"
@@ -248,13 +248,13 @@ function MyProfile() {
               {profile.is_admin ? " · Admin" : ""}
             </span>
             {collegeId && (
-              <p className="mt-1.5 text-sm text-slate-500">
-                College ID: <span className="font-mono font-semibold text-slate-700">{collegeId}</span>{" "}
-                <span className="text-xs text-slate-400">(only you can see this)</span>
+              <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
+                College ID: <span className="font-mono font-semibold text-slate-700 dark:text-slate-200">{collegeId}</span>{" "}
+                <span className="text-xs text-slate-400 dark:text-slate-500">(only you can see this)</span>
               </p>
             )}
             {profile.bio && (
-              <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{profile.bio}</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{profile.bio}</p>
             )}
           </div>
           {!editing && (
@@ -269,13 +269,13 @@ function MyProfile() {
         </div>
 
         {saved && !editing && (
-          <p role="status" className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+          <p role="status" className="mt-3 rounded-lg bg-emerald-50 dark:bg-emerald-400/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300">
             Profile saved.
           </p>
         )}
 
         {editing && (
-          <form onSubmit={handleSave} className="mt-5 flex flex-col gap-4 border-t border-slate-100 pt-5" noValidate>
+          <form onSubmit={handleSave} className="mt-5 flex flex-col gap-4 border-t border-slate-100 dark:border-slate-800 pt-5" noValidate>
             <div>
               <label className={labelClass} htmlFor="profile-name">Full name</label>
               <input
@@ -315,7 +315,7 @@ function MyProfile() {
                 placeholder="A line about you — branch, interests, anything."
                 className={`${inputClass} resize-none`}
               />
-              <p className="mt-1 text-right text-xs text-slate-400">{bio.length}/{MAX_BIO_LENGTH}</p>
+              <p className="mt-1 text-right text-xs text-slate-400 dark:text-slate-500">{bio.length}/{MAX_BIO_LENGTH}</p>
             </div>
             <ProfileAvatarInput preview={avatarPreview} name={fullName || profile.full_name} onPick={pickAvatar} />
             {error && (
@@ -332,7 +332,7 @@ function MyProfile() {
               <button
                 type="button"
                 onClick={() => setEditing(false)}
-                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                className="rounded-lg border border-slate-200 dark:border-slate-800 px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
               >
                 Cancel
               </button>
@@ -341,7 +341,7 @@ function MyProfile() {
         )}
       </section>
 
-      <h3 className="text-lg font-bold text-slate-900">Your posts</h3>
+      <h3 className="text-lg font-bold text-slate-900 dark:text-slate-50">Your posts</h3>
       <PostsList userId={profile.id} />
     </div>
   );
