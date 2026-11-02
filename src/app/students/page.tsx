@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
-import { COURSES, YEARS, type Profile } from "@/lib/constants";
+import { COURSES, YEARS, cardClass, type Profile } from "@/lib/constants";
 import { AppShell } from "@/components/shell";
 import { AuthGate, LoadingScreen, inputClass } from "@/components/common";
 import { ProfileAvatar, SearchIcon } from "@/components/icons";
@@ -27,11 +27,19 @@ export default function StudentsPage() {
 function Discovery() {
   const { user } = useAuth();
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [course, setCourse] = useState("");
   const [year, setYear] = useState("");
   const [students, setStudents] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Debounce the name search so typing does not fire a database query on
+  // every keystroke; filters still apply immediately.
+  useEffect(() => {
+    const t = window.setTimeout(() => setDebouncedQuery(query), 300);
+    return () => window.clearTimeout(t);
+  }, [query]);
 
   useEffect(() => {
     let active = true;
@@ -45,7 +53,7 @@ function Discovery() {
         .eq("verification_status", "approved")
         .order("full_name", { ascending: true })
         .limit(100);
-      const term = query.trim();
+      const term = debouncedQuery.trim();
       if (term) q = q.ilike("full_name", `%${term}%`);
       if (course) q = q.eq("course", course);
       if (year) q = q.eq("year", year);
@@ -58,14 +66,14 @@ function Discovery() {
     return () => {
       active = false;
     };
-  }, [query, course, year]);
+  }, [debouncedQuery, course, year]);
 
   const others = students.filter((s) => s.id !== user?.id);
 
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-xl font-bold text-slate-900 dark:text-slate-50">Discover students</h1>
+        <h1 className="text-[26px] font-extrabold tracking-tight text-slate-900 dark:text-slate-50">Discover students</h1>
         <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
           Verified students of your college. Search by name, or filter by course and year.
         </p>
@@ -87,7 +95,7 @@ function Discovery() {
           value={course}
           onChange={(e) => setCourse(e.target.value)}
           aria-label="Filter by course"
-          className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 px-3 py-2.5 text-[15px] text-slate-900 dark:text-slate-50 outline-none focus:border-indigo-400 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-500/20 sm:w-44"
+          className={`${inputClass} sm:w-44`}
         >
           <option value="">All courses</option>
           {COURSES.map((c) => (
@@ -98,7 +106,7 @@ function Discovery() {
           value={year}
           onChange={(e) => setYear(e.target.value)}
           aria-label="Filter by year"
-          className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 px-3 py-2.5 text-[15px] text-slate-900 dark:text-slate-50 outline-none focus:border-indigo-400 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-500/20 sm:w-40"
+          className={`${inputClass} sm:w-40`}
         >
           <option value="">All years</option>
           {YEARS.map((y) => (
@@ -110,11 +118,11 @@ function Discovery() {
       {loading ? (
         <LoadingScreen label="Loading students" />
       ) : error ? (
-        <p role="alert" className="rounded-2xl border border-dashed border-red-200 bg-white dark:bg-slate-900 px-4 py-8 text-center text-sm text-red-600">
+        <p role="alert" className="rounded-3xl border border-dashed border-red-200 bg-white dark:bg-slate-900 px-4 py-8 text-center text-sm text-red-600">
           {error}
         </p>
       ) : others.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-10 text-center">
+        <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-10 text-center">
           <p className="font-semibold text-slate-700 dark:text-slate-200">No students found</p>
           <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400">
             {query || course || year
@@ -128,9 +136,11 @@ function Discovery() {
             <li key={s.id}>
               <Link
                 href={`/profile?id=${s.id}`}
-                className="flex items-center gap-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)] transition hover:shadow-md"
+                className={`flex items-center gap-3.5 ${cardClass} p-4 transition-all hover:-translate-y-0.5 hover:shadow-lg`}
               >
-                <ProfileAvatar name={s.full_name} avatarUrl={s.avatar_url} size="lg" />
+                <span className="shrink-0 rounded-full ring-2 ring-pink-100 dark:ring-pink-500/25">
+                  <ProfileAvatar name={s.full_name} avatarUrl={s.avatar_url} size="lg" />
+                </span>
                 <span className="min-w-0">
                   <span className="block truncate font-semibold text-slate-900 dark:text-slate-50">{s.full_name}</span>
                   <span className="block text-sm text-slate-500 dark:text-slate-400">
