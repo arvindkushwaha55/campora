@@ -73,7 +73,7 @@ function Discovery() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-[26px] font-extrabold tracking-tight text-slate-900 dark:text-slate-50">Discover students</h1>
+        <h1 className="font-display text-[30px] font-semibold tracking-tight text-slate-900 dark:text-slate-50">Discover students</h1>
         <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
           Verified students of your college. Search by name, or filter by course and year.
         </p>
