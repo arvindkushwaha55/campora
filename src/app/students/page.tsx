@@ -128,7 +128,7 @@ function Discovery() {
             <li key={s.id}>
               <Link
                 href={`/profile?id=${s.id}`}
-                className="flex items-center gap-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-[0_1px_3px_rgba(15,23,42,0.05)] transition hover:shadow-md"
+                className="flex items-center gap-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)] transition hover:shadow-md"
               >
                 <ProfileAvatar name={s.full_name} avatarUrl={s.avatar_url} size="lg" />
                 <span className="min-w-0">
