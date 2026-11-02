@@ -6,11 +6,11 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://arvindkushwaha55.github.io/campora/"),
   title: "Campora — Your Campus, Connected",
   description:
-    "Campora is a campus-based social platform where college students share updates, photos, and college event information. Work in progress.",
+    "Campora is a private social platform for one college community — students share campus updates and photos, like posts, and discover classmates. Work in progress.",
   openGraph: {
     title: "Campora — Your Campus, Connected",
     description:
-      "A campus-based social platform for college students — updates, events and campus life in one feed. Work in progress.",
+      "A private campus feed for verified college students — updates, photos and classmates in one place. Work in progress.",
     url: "https://arvindkushwaha55.github.io/campora/",
     siteName: "Campora",
     type: "website",
@@ -18,7 +18,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#fbcfe8",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fbcfe8" },
+    { media: "(prefers-color-scheme: dark)", color: "#020617" },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -4,46 +4,28 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { FEED_PAGE_SIZE, type Post } from "@/lib/constants";
 import { useAuth } from "@/lib/auth";
+import { POST_COLUMNS, attachAuthors, usePostLikes, type PostRow } from "@/lib/posts";
 import { AppShell } from "@/components/shell";
 import { LoadingScreen, NotConfigured, VerificationScreen } from "@/components/common";
 import { Landing } from "@/components/landing";
 import { Composer, PostCard } from "@/components/feed";
 
-const POST_COLUMNS = "id, user_id, text, image_url, created_at";
-
-type PostRow = Omit<Post, "profiles">;
+function greetingForNow() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
 
 function Feed() {
-  const { user } = useAuth();
+  const { profile } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
-  const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
-  const [myLikes, setMyLikes] = useState<Set<string>>(new Set());
+  const { likeCounts, myLikes, syncLikes, toggleLike } = usePostLikes();
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState("");
   const pageRef = useRef(0);
-
-  const loadLikes = useCallback(
-    async (newPosts: Post[]) => {
-      if (!supabase || newPosts.length === 0) return;
-      const ids = newPosts.map((p) => p.id);
-      const { data } = await supabase.from("likes").select("post_id, user_id").in("post_id", ids);
-      if (!data) return;
-      setLikeCounts((prev) => {
-        const next = { ...prev };
-        for (const id of ids) next[id] = 0;
-        for (const row of data) next[row.post_id] = (next[row.post_id] ?? 0) + 1;
-        return next;
-      });
-      setMyLikes((prev) => {
-        const next = new Set(prev);
-        for (const row of data) if (row.user_id === user?.id) next.add(row.post_id);
-        return next;
-      });
-    },
-    [user?.id]
-  );
 
   const loadPage = useCallback(
     async (page: number, append: boolean) => {
@@ -59,42 +41,13 @@ function Feed() {
         return;
       }
       const rows = (data as unknown as PostRow[]) ?? [];
-      // Author details are loaded with a separate profiles query and merged
-      // in here, instead of a PostgREST embed ("profiles(...)") — the embed
-      // made the whole feed fail whenever the posts↔profiles join could not
-      // be resolved, even though both tables were readable on their own.
-      let profilesById = new Map<string, NonNullable<Post["profiles"]>>();
-      const authorIds = [...new Set(rows.map((r) => r.user_id))];
-      if (authorIds.length > 0) {
-        const { data: authors } = await supabase
-          .from("profiles")
-          .select("id, full_name, avatar_url, course, year, is_guest")
-          .in("id", authorIds);
-        if (authors) {
-          profilesById = new Map(
-            authors.map((a) => [
-              a.id,
-              {
-                full_name: a.full_name,
-                avatar_url: a.avatar_url,
-                course: a.course,
-                year: a.year,
-                is_guest: a.is_guest,
-              },
-            ])
-          );
-        }
-      }
-      const posts: Post[] = rows.map((r) => ({
-        ...r,
-        profiles: profilesById.get(r.user_id) ?? null,
-      }));
+      const posts = await attachAuthors(rows);
       setHasMore(rows.length === FEED_PAGE_SIZE);
       setPosts((prev) => (append ? [...prev, ...posts] : posts));
       pageRef.current = page;
-      await loadLikes(posts);
+      await syncLikes(posts, "merge");
     },
-    [loadLikes]
+    [syncLikes]
   );
 
   const reload = useCallback(async () => {
@@ -108,48 +61,27 @@ function Feed() {
     void reload();
   }, [reload]);
 
-  async function toggleLike(post: Post) {
-    if (!supabase || !user) return;
-    const liked = myLikes.has(post.id);
-    // Optimistic update; reverted if the database call fails.
-    setMyLikes((prev) => {
-      const next = new Set(prev);
-      if (liked) next.delete(post.id);
-      else next.add(post.id);
-      return next;
-    });
-    setLikeCounts((prev) => ({
-      ...prev,
-      [post.id]: Math.max(0, (prev[post.id] ?? 0) + (liked ? -1 : 1)),
-    }));
-    const { error: likeError } = liked
-      ? await supabase.from("likes").delete().eq("post_id", post.id).eq("user_id", user.id)
-      : await supabase.from("likes").insert({ post_id: post.id, user_id: user.id });
-    if (likeError) {
-      setMyLikes((prev) => {
-        const next = new Set(prev);
-        if (liked) next.add(post.id);
-        else next.delete(post.id);
-        return next;
-      });
-      setLikeCounts((prev) => ({
-        ...prev,
-        [post.id]: Math.max(0, (prev[post.id] ?? 0) + (liked ? 1 : -1)),
-      }));
-    }
-  }
+  const firstName = profile?.full_name?.trim().split(" ")[0];
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
+      <div>
+        <h1 className="text-[26px] font-extrabold tracking-tight text-slate-900 dark:text-slate-50">
+          {firstName ? `${greetingForNow()}, ${firstName}` : "Campus Feed"}
+        </h1>
+        <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+          What&rsquo;s happening around your college — shared by students and guests of your campus.
+        </p>
+      </div>
+
       <Composer onPosted={reload} />
 
       <section aria-label="Campus feed" className="flex flex-col gap-4">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-50">Campus Feed</h2>
 
         {loading ? (
           <LoadingScreen label="Loading the feed" />
         ) : error ? (
-          <div className="rounded-2xl border border-dashed border-red-200 bg-white dark:bg-slate-900 px-4 py-8 text-center">
+          <div className="rounded-3xl border border-dashed border-red-200 bg-white dark:bg-slate-900 px-4 py-8 text-center">
             <p className="text-sm text-red-600">{error}</p>
             <button
               type="button"
@@ -160,7 +92,7 @@ function Feed() {
             </button>
           </div>
         ) : posts.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-10 text-center">
+          <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-10 text-center">
             <p className="font-semibold text-slate-700 dark:text-slate-200">No posts yet</p>
             <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400">
               The campus feed is empty. Be the first to share an update using the box above.
@@ -220,7 +152,7 @@ export default function HomePage() {
     return <VerificationScreen profile={profile} />;
   }
   return (
-    <AppShell>
+    <AppShell rail>
       <Feed />
     </AppShell>
   );
