@@ -50,19 +50,34 @@ export function NotConfigured() {
 
 export function LoadingScreen({ label = "Loading..." }: { label?: string }) {
   return (
-    <div className="flex flex-col gap-4" aria-label={label}>
-      <div className="h-36 animate-pulse rounded-2xl bg-slate-200/70 dark:bg-slate-800" />
-      <div className="h-56 animate-pulse rounded-2xl bg-slate-200/70 dark:bg-slate-800" />
-      <div className="h-56 animate-pulse rounded-2xl bg-slate-200/70 dark:bg-slate-800" />
+    <div className="flex flex-col gap-4" aria-label={label} role="status">
+      {[0, 1].map((i) => (
+        <div
+          key={i}
+          className="animate-pulse rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5"
+        >
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-slate-200 dark:bg-slate-800" />
+            <div className="flex-1">
+              <div className="h-3.5 w-2/5 rounded bg-slate-200 dark:bg-slate-800" />
+              <div className="mt-2 h-3 w-3/5 rounded bg-slate-100 dark:bg-slate-800/70" />
+            </div>
+          </div>
+          <div className="mt-4 h-3.5 w-full rounded bg-slate-100 dark:bg-slate-800/70" />
+          <div className="mt-2 h-3.5 w-4/5 rounded bg-slate-100 dark:bg-slate-800/70" />
+          {i === 0 && <div className="mt-4 h-44 rounded-2xl bg-slate-100 dark:bg-slate-800/70" />}
+        </div>
+      ))}
     </div>
   );
 }
 
 /**
- * Shown to signed-in students whose account is not approved yet (or was
- * rejected). The campus feed stays locked until an admin approves the
- * account — this gate is also enforced by the database (RLS); this
- * screen just explains it.
+ * Safety-net screen for a signed-in account whose status is not
+ * "approved". Since the no-approval model (migration_v4) every account is
+ * approved the moment it is created, so this only appears if an admin has
+ * manually restricted an account in the database — the same gate is
+ * enforced by RLS; this screen just explains it.
  */
 export function VerificationScreen({ profile }: { profile: Profile }) {
   const { user, signOut } = useAuth();
@@ -80,7 +95,9 @@ export function VerificationScreen({ profile }: { profile: Profile }) {
       <div className="absolute right-4 top-4">
         <ThemeToggle />
       </div>
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 text-center shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)]">
+      <div className="w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-center shadow-[0_1px_2px_rgba(15,23,42,0.05),0_24px_48px_-16px_rgba(15,23,42,0.22)]">
+        <div className="h-1.5 bg-gradient-to-r from-indigo-500 via-violet-500 to-indigo-600" aria-hidden="true" />
+        <div className="p-6 sm:p-8">
         <div className="flex justify-center">
           <Brand />
         </div>
@@ -89,15 +106,15 @@ export function VerificationScreen({ profile }: { profile: Profile }) {
             rejected ? "bg-red-50 dark:bg-red-400/10 text-red-700 dark:text-red-300" : "bg-amber-50 dark:bg-amber-400/10 text-amber-700 dark:text-amber-300"
           }`}
         >
-          {rejected ? "Verification not approved" : "Verification pending"}
+          {rejected ? "Account restricted" : "Account not active yet"}
         </span>
         <h1 className="mt-3 text-xl font-bold text-slate-900 dark:text-slate-50">
-          {rejected ? "Your account was not approved" : "One more step, " + profile.full_name.split(" ")[0]}
+          {rejected ? "This account can't access the feed" : "One more step, " + profile.full_name.split(" ")[0]}
         </h1>
         <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
           {rejected
-            ? "An admin reviewed your account and could not approve it. If you think this is a mistake, please contact your faculty admin."
-            : "Your account is created. An admin will review and approve it, and then your campus feed unlocks automatically. This usually happens once the admin reviews new signups."}
+            ? "An admin has restricted this account. If you think this is a mistake, please contact your faculty admin."
+            : "Your account is created but not active yet. Confirm your email from the link we sent you, then log in again — the feed unlocks as soon as your email is confirmed. If you already confirmed and still see this, contact your faculty admin."}
         </p>
         {!rejected && (
           <ul className="mt-5 flex flex-col gap-2.5 text-left text-sm">
@@ -109,10 +126,6 @@ export function VerificationScreen({ profile }: { profile: Profile }) {
                 {emailConfirmed ? "Email verified" : "Confirm your email from the link we sent you"}
               </span>
             </li>
-            <li className="flex items-center gap-2.5">
-              <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-amber-100 dark:bg-amber-400/20 text-[11px] font-bold text-amber-700 dark:text-amber-300">2</span>
-              <span className="text-slate-600 dark:text-slate-300">Admin approves your account ({profile.course} · {profile.year} year)</span>
-            </li>
           </ul>
         )}
         <button
@@ -122,6 +135,7 @@ export function VerificationScreen({ profile }: { profile: Profile }) {
         >
           Log out
         </button>
+        </div>
       </div>
     </main>
   );
@@ -129,8 +143,8 @@ export function VerificationScreen({ profile }: { profile: Profile }) {
 
 // Wraps signed-in pages: shows the setup screen when the backend keys are
 // missing, a loading state while the session is checked, sends signed-out
-// visitors to /login, and keeps unverified students on the verification
-// screen until an admin approves their account.
+// visitors to /login, and shows the restriction screen for the rare account
+// whose status is not "approved" (accounts are active instantly otherwise).
 export function AuthGate({ children }: { children: ReactNode }) {
   const { user, profile, loading } = useAuth();
   const router = useRouter();
@@ -171,13 +185,16 @@ export function AuthCard({
       <div className="absolute right-4 top-4">
         <ThemeToggle />
       </div>
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)]">
-        <div className="flex justify-center">
-          <Brand />
+      <div className="w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_24px_48px_-16px_rgba(15,23,42,0.22)]">
+        <div className="h-1.5 bg-gradient-to-r from-indigo-500 via-violet-500 to-indigo-600" aria-hidden="true" />
+        <div className="p-6 sm:p-8">
+          <div className="flex justify-center">
+            <Brand />
+          </div>
+          <h1 className="mt-5 text-center text-[22px] font-bold tracking-tight text-slate-900 dark:text-slate-50">{title}</h1>
+          <p className="mt-1 text-center text-sm leading-relaxed text-slate-500 dark:text-slate-400">{subtitle}</p>
+          <div className="mt-6">{children}</div>
         </div>
-        <h1 className="mt-5 text-center text-xl font-bold text-slate-900 dark:text-slate-50">{title}</h1>
-        <p className="mt-1 text-center text-sm text-slate-500 dark:text-slate-400">{subtitle}</p>
-        <div className="mt-6">{children}</div>
       </div>
       <p className="mt-4 text-center text-xs text-slate-400 dark:text-slate-500">
         Campora — a personal mini project, Work in Progress.
@@ -230,9 +247,7 @@ export function ProfileAvatarInput({
 }
 
 export const inputClass =
-  "w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 px-3 py-2.5 text-[15px] text-slate-900 dark:text-slate-50 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-400 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-500/20";
-
-export const labelClass = "mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200";
+  "w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 px-3.5 py-2.5 text-[15px] text-slate-900 dark:text-slate-50 outline-none transition placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-400 focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-500/15";
 
 // Password field with a show/hide toggle, used by login, signup and reset.
 export function PasswordInput({
@@ -272,6 +287,8 @@ export function PasswordInput({
     </div>
   );
 }
+
+export const labelClass = "mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200";
 
 /**
  * Guest entry for teachers and visitors: just a name, no college email,
