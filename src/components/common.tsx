@@ -96,7 +96,7 @@ export function VerificationScreen({ profile }: { profile: Profile }) {
         <ThemeToggle />
       </div>
       <div className="w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-center shadow-[0_1px_2px_rgba(15,23,42,0.05),0_24px_48px_-16px_rgba(15,23,42,0.22)]">
-        <div className="h-1.5 bg-gradient-to-r from-indigo-500 via-violet-500 to-indigo-600" aria-hidden="true" />
+        <div className="h-1.5 bg-slate-900 dark:bg-slate-50" aria-hidden="true" />
         <div className="p-6 sm:p-8">
         <div className="flex justify-center">
           <Brand />
@@ -186,12 +186,12 @@ export function AuthCard({
         <ThemeToggle />
       </div>
       <div className="w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_24px_48px_-16px_rgba(15,23,42,0.22)]">
-        <div className="h-1.5 bg-gradient-to-r from-indigo-500 via-violet-500 to-indigo-600" aria-hidden="true" />
+        <div className="h-1.5 bg-slate-900 dark:bg-slate-50" aria-hidden="true" />
         <div className="p-6 sm:p-8">
           <div className="flex justify-center">
             <Brand />
           </div>
-          <h1 className="mt-5 text-center text-[22px] font-bold tracking-tight text-slate-900 dark:text-slate-50">{title}</h1>
+          <h1 className="mt-5 text-center font-display text-[26px] font-semibold tracking-tight text-slate-900 dark:text-slate-50">{title}</h1>
           <p className="mt-1 text-center text-sm leading-relaxed text-slate-500 dark:text-slate-400">{subtitle}</p>
           <div className="mt-6">{children}</div>
         </div>

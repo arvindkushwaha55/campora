@@ -74,8 +74,8 @@ function Moderation() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="flex items-center gap-2 text-[26px] font-extrabold tracking-tight text-slate-900 dark:text-slate-50">
-          <ShieldIcon className="h-5.5 w-5.5 text-indigo-600 dark:text-indigo-400" /> Moderation
+        <h1 className="flex items-center gap-2 font-display text-[30px] font-semibold tracking-tight text-slate-900 dark:text-slate-50">
+          <ShieldIcon className="h-6 w-6 text-indigo-600 dark:text-indigo-400" /> Moderation
         </h1>
         <p className="mt-0.5 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
           Accounts no longer need approval — every student who confirms their
