@@ -102,14 +102,14 @@ function OtherProfile({ id }: { id: string }) {
         ← Back to feed
       </Link>
       <section className={`overflow-hidden ${cardClass}`} aria-label={`${profile.full_name}'s profile`}>
-        <div className="h-24 bg-gradient-to-r from-indigo-500 via-violet-500 to-indigo-600 dark:from-indigo-600/50 dark:via-violet-600/40 dark:to-indigo-700/50" aria-hidden="true" />
+        <div className="band-ink h-24" aria-hidden="true" />
         <div className="px-5 pb-5">
           <div className="-mt-9">
             <span className="inline-block rounded-full ring-4 ring-white dark:ring-slate-900">
               <ProfileAvatar name={profile.full_name} avatarUrl={profile.avatar_url} size="lg" />
             </span>
           </div>
-          <h2 className="mt-3 text-[22px] font-extrabold tracking-tight text-slate-900 dark:text-slate-50">{profile.full_name}</h2>
+          <h2 className="mt-3 font-display text-[26px] font-semibold tracking-tight text-slate-900 dark:text-slate-50">{profile.full_name}</h2>
           <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
             {profile.is_guest ? "Guest visitor" : `${profile.course} · ${profile.year} year`}
           </p>
@@ -222,7 +222,7 @@ function MyProfile() {
   return (
     <div className="flex flex-col gap-4">
       <section className={`overflow-hidden ${cardClass}`} aria-label="My profile">
-        <div className="h-24 bg-gradient-to-r from-indigo-500 via-violet-500 to-indigo-600 dark:from-indigo-600/50 dark:via-violet-600/40 dark:to-indigo-700/50" aria-hidden="true" />
+        <div className="band-ink h-24" aria-hidden="true" />
         <div className="px-5 pb-5">
         <div className="flex flex-wrap items-end gap-4">
           <div className="-mt-9 shrink-0">
@@ -231,7 +231,7 @@ function MyProfile() {
             </span>
           </div>
           <div className="min-w-0 flex-1 pt-2">
-            <h2 className="text-[22px] font-extrabold tracking-tight text-slate-900 dark:text-slate-50">{profile.full_name}</h2>
+            <h2 className="font-display text-[26px] font-semibold tracking-tight text-slate-900 dark:text-slate-50">{profile.full_name}</h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">
               {profile.is_guest ? "Guest visitor" : `${profile.course} · ${profile.year} year`}
             </p>
@@ -266,7 +266,7 @@ function MyProfile() {
             <button
               type="button"
               onClick={startEditing}
-              className="rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 shadow-md shadow-indigo-600/20 px-5 py-2 text-sm font-semibold text-white transition-all hover:from-indigo-700 hover:to-violet-700 active:scale-95"
+              className="rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-md shadow-indigo-600/25 transition-all hover:bg-indigo-700 active:scale-95"
             >
               Edit profile
             </button>
@@ -332,7 +332,7 @@ function MyProfile() {
               <button
                 type="submit"
                 disabled={saving}
-                className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 shadow-sm px-5 py-2 text-sm font-semibold text-white transition-colors hover:from-indigo-700 hover:to-violet-700 disabled:opacity-60"
+                className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:opacity-60"
               >
                 {saving ? "Saving..." : "Save changes"}
               </button>
