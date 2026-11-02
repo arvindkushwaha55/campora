@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
-import { AuthCard, NotConfigured, inputClass, labelClass } from "@/components/common";
+import { AuthCard, NotConfigured, PasswordInput, labelClass } from "@/components/common";
 
 /**
  * Landing page for the password-reset email link. Supabase puts a short-lived
@@ -90,26 +90,22 @@ export default function ResetPasswordPage() {
         <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
           <div>
             <label className={labelClass} htmlFor="reset-password">New password</label>
-            <input
+            <PasswordInput
               id="reset-password"
-              type="password"
               autoComplete="new-password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={setPassword}
               placeholder="At least 6 characters"
-              className={inputClass}
             />
           </div>
           <div>
             <label className={labelClass} htmlFor="reset-confirm">Confirm new password</label>
-            <input
+            <PasswordInput
               id="reset-confirm"
-              type="password"
               autoComplete="new-password"
               value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
+              onChange={setConfirm}
               placeholder="Type it again"
-              className={inputClass}
             />
           </div>
           {error && (
