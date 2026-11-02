@@ -17,6 +17,7 @@ export interface Profile {
   bio: string | null;
   verification_status: VerificationStatus;
   is_admin: boolean;
+  is_guest: boolean;
   created_at: string;
 }
 
@@ -40,6 +41,7 @@ export interface Post {
     avatar_url: string | null;
     course: string;
     year: string;
+    is_guest?: boolean;
   } | null;
 }
 
