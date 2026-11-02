@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
-import { AuthCard, NotConfigured, inputClass, labelClass } from "@/components/common";
+import { AuthCard, NotConfigured, PasswordInput, labelClass } from "@/components/common";
 
 /**
  * Landing page for the password-reset email link. Supabase puts a short-lived
@@ -90,26 +90,22 @@ export default function ResetPasswordPage() {
         <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
           <div>
             <label className={labelClass} htmlFor="reset-password">New password</label>
-            <input
+            <PasswordInput
               id="reset-password"
-              type="password"
               autoComplete="new-password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={setPassword}
               placeholder="At least 6 characters"
-              className={inputClass}
             />
           </div>
           <div>
             <label className={labelClass} htmlFor="reset-confirm">Confirm new password</label>
-            <input
+            <PasswordInput
               id="reset-confirm"
-              type="password"
               autoComplete="new-password"
               value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
+              onChange={setConfirm}
               placeholder="Type it again"
-              className={inputClass}
             />
           </div>
           {error && (
@@ -118,7 +114,7 @@ export default function ResetPasswordPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 shadow-sm px-4 py-2.5 text-[15px] font-semibold text-white transition-colors hover:from-indigo-700 hover:to-violet-700 disabled:opacity-60"
+            className="rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 shadow-md shadow-indigo-600/20 px-4 py-3 text-[15px] font-semibold text-white transition-all hover:from-indigo-700 hover:to-violet-700 active:scale-[0.98] disabled:opacity-60"
           >
             {submitting ? "Updating..." : "Update password"}
           </button>
