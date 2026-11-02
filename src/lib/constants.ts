@@ -45,6 +45,14 @@ export interface Post {
   } | null;
 }
 
+/**
+ * Shared surface style for cards across the app (feed, discovery, profile,
+ * rails) so every screen reads as one product. Compose with padding and
+ * any hover/transition classes at the call site.
+ */
+export const cardClass =
+  "rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)]";
+
 export const MAX_POST_LENGTH = 1000;
 export const MAX_BIO_LENGTH = 160;
 export const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
