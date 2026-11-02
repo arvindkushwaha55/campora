@@ -99,12 +99,12 @@ export default function SignupPage() {
     }
 
     // With email confirmation ON, signup returns no session: the student
-    // confirms the email first, then waits for an admin to approve the
+    // confirms the email first; the account is active immediately
     // account. Say exactly that instead of pretending we are logged in.
     if (!data.session || !data.user) {
       setSubmitting(false);
       setNotice(
-        "Account created. Please confirm your email from the link we sent you, then log in — an admin will review and approve your account before your feed unlocks."
+        "Account created. Please confirm your email from the link we sent you, then log in — your campus feed unlocks as soon as your email is confirmed."
       );
       return;
     }
