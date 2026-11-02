@@ -39,7 +39,7 @@ function PostsList({ userId }: { userId: string }) {
     const rows = (data as unknown as Omit<Post, "profiles">[]) ?? [];
     const { data: author } = await supabase
       .from("profiles")
-      .select("full_name, avatar_url, course, year")
+      .select("full_name, avatar_url, course, year, is_guest")
       .eq("id", userId)
       .maybeSingle();
     const merged: Post[] = rows.map((r) => ({
@@ -50,6 +50,7 @@ function PostsList({ userId }: { userId: string }) {
             avatar_url: author.avatar_url,
             course: author.course,
             year: author.year,
+            is_guest: author.is_guest,
           }
         : null,
     }));
@@ -142,7 +143,7 @@ function OtherProfile({ id }: { id: string }) {
       if (!supabase) return;
       const { data } = await supabase
         .from("profiles")
-        .select("id, full_name, course, year, avatar_url, bio, verification_status, is_admin, created_at")
+        .select("id, full_name, course, year, avatar_url, bio, verification_status, is_admin, is_guest, created_at")
         .eq("id", id)
         .single();
       setProfile((data as Profile) ?? null);
@@ -177,11 +178,17 @@ function OtherProfile({ id }: { id: string }) {
           </div>
           <h2 className="mt-3 text-[22px] font-extrabold tracking-tight text-slate-900 dark:text-slate-50">{profile.full_name}</h2>
           <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-            {profile.course} · {profile.year} year
+            {profile.is_guest ? "Guest visitor" : `${profile.course} · ${profile.year} year`}
           </p>
-          <span className="mt-2.5 inline-block rounded-full bg-emerald-50 dark:bg-emerald-400/10 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-300">
-            ✓ Verified student
-          </span>
+          {profile.is_guest ? (
+            <span className="mt-2.5 inline-block rounded-full bg-amber-50 dark:bg-amber-400/10 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-300">
+              Guest
+            </span>
+          ) : (
+            <span className="mt-2.5 inline-block rounded-full bg-emerald-50 dark:bg-emerald-400/10 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+              ✓ Verified student
+            </span>
+          )}
           {profile.bio && (
             <p className="mt-2.5 text-[15px] leading-relaxed text-slate-600 dark:text-slate-300">{profile.bio}</p>
           )}
@@ -293,23 +300,29 @@ function MyProfile() {
           <div className="min-w-0 flex-1 pt-2">
             <h2 className="text-[22px] font-extrabold tracking-tight text-slate-900 dark:text-slate-50">{profile.full_name}</h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              {profile.course} · {profile.year} year
+              {profile.is_guest ? "Guest visitor" : `${profile.course} · ${profile.year} year`}
             </p>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{user.email}</p>
+            {user.email && (
+              <p className="text-sm text-slate-500 dark:text-slate-400">{user.email}</p>
+            )}
             <span
               className={`mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                profile.verification_status === "approved"
-                  ? "bg-emerald-50 dark:bg-emerald-400/10 text-emerald-700 dark:text-emerald-300"
-                  : profile.verification_status === "rejected"
-                    ? "bg-red-50 dark:bg-red-400/10 text-red-700 dark:text-red-300"
-                    : "bg-amber-50 dark:bg-amber-400/10 text-amber-700 dark:text-amber-300"
+                profile.is_guest
+                  ? "bg-amber-50 dark:bg-amber-400/10 text-amber-700 dark:text-amber-300"
+                  : profile.verification_status === "approved"
+                    ? "bg-emerald-50 dark:bg-emerald-400/10 text-emerald-700 dark:text-emerald-300"
+                    : profile.verification_status === "rejected"
+                      ? "bg-red-50 dark:bg-red-400/10 text-red-700 dark:text-red-300"
+                      : "bg-amber-50 dark:bg-amber-400/10 text-amber-700 dark:text-amber-300"
               }`}
             >
-              {profile.verification_status === "approved"
-                ? "✓ Verified student"
-                : profile.verification_status === "rejected"
-                  ? "Verification not approved"
-                  : "Verification pending"}
+              {profile.is_guest
+                ? "Guest"
+                : profile.verification_status === "approved"
+                  ? "✓ Verified student"
+                  : profile.verification_status === "rejected"
+                    ? "Verification not approved"
+                    : "Verification pending"}
               {profile.is_admin ? " · Admin" : ""}
             </span>
             {profile.bio && (
@@ -345,6 +358,7 @@ function MyProfile() {
                 className={inputClass}
               />
             </div>
+            {!profile.is_guest && (
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={labelClass} htmlFor="profile-course">Course</label>
@@ -363,6 +377,7 @@ function MyProfile() {
                 </select>
               </div>
             </div>
+            )}
             <div>
               <label className={labelClass} htmlFor="profile-bio">Bio (optional)</label>
               <textarea
