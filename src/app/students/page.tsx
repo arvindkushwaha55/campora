@@ -41,7 +41,7 @@ function Discovery() {
       setError("");
       let q = supabase
         .from("profiles")
-        .select("id, full_name, course, year, avatar_url, bio, verification_status, is_admin, created_at")
+        .select("id, full_name, course, year, avatar_url, bio, verification_status, is_admin, is_guest, created_at")
         .eq("verification_status", "approved")
         .order("full_name", { ascending: true })
         .limit(100);
@@ -136,7 +136,7 @@ function Discovery() {
                 <span className="min-w-0">
                   <span className="block truncate font-semibold text-slate-900 dark:text-slate-50">{s.full_name}</span>
                   <span className="block text-sm text-slate-500 dark:text-slate-400">
-                    {s.course} · {s.year} year
+                    {s.is_guest ? "Guest" : `${s.course} · ${s.year} year`}
                   </span>
                   {s.bio && <span className="mt-0.5 block truncate text-sm text-slate-400 dark:text-slate-500">{s.bio}</span>}
                 </span>
