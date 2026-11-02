@@ -66,10 +66,20 @@ function Feed() {
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-[26px] font-extrabold tracking-tight text-slate-900 dark:text-slate-50">
-          {firstName ? `${greetingForNow()}, ${firstName}` : "Campus Feed"}
+        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-indigo-600 dark:text-indigo-400">
+          The campus feed
+        </p>
+        <h1 className="mt-1.5 font-display text-[32px] font-semibold leading-tight tracking-tight text-slate-900 dark:text-slate-50">
+          {firstName ? (
+            <>
+              {greetingForNow()},{" "}
+              <span className="italic text-indigo-600 dark:text-indigo-400">{firstName}</span>
+            </>
+          ) : (
+            "Campus Feed"
+          )}
         </h1>
-        <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           What&rsquo;s happening around your college — shared by students and guests of your campus.
         </p>
       </div>
