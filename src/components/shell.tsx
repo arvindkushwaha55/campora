@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { HomeIcon, LogOutIcon, ProfileAvatar, SearchIcon, ShieldIcon, UserIcon } from "./icons";
+import { ThemeToggle } from "./theme-toggle";
 
 export function Brand() {
   return (
@@ -11,7 +12,7 @@ export function Brand() {
       <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-pink-200 text-lg font-extrabold text-rose-900">
         C
       </span>
-      <span className="text-[19px] font-extrabold tracking-tight text-slate-900">Campora</span>
+      <span className="text-[19px] font-extrabold tracking-tight text-slate-900 dark:text-slate-50">Campora</span>
     </span>
   );
 }
@@ -19,8 +20,8 @@ export function Brand() {
 function navClass(active: boolean) {
   return `flex items-center gap-3 rounded-lg px-3 py-2.5 text-[15px] font-medium transition-colors ${
     active
-      ? "bg-indigo-50 text-indigo-700"
-      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+      ? "bg-indigo-50 dark:bg-indigo-400/10 text-indigo-700 dark:text-indigo-300"
+      : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-50"
   }`;
 }
 
@@ -35,7 +36,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-slate-200 bg-white px-4 py-5 lg:flex">
+    <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-5 lg:flex">
       <Brand />
       <nav className="mt-8 flex flex-col gap-1" aria-label="Main">
         <Link href="/" className={navClass(pathname === "/")} aria-current={pathname === "/" ? "page" : undefined}>
@@ -67,24 +68,28 @@ export function Sidebar() {
         <button
           type="button"
           onClick={handleLogout}
-          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[15px] font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[15px] font-medium text-slate-600 dark:text-slate-300 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-50"
         >
           <LogOutIcon className="h-5 w-5" /> Log out
         </button>
       </nav>
       <div className="mt-auto">
+        <div className="mb-1 flex items-center justify-between rounded-lg px-2 py-1">
+          <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Appearance</span>
+          <ThemeToggle />
+        </div>
         {profile && (
           <div className="flex items-center gap-2.5 rounded-lg px-2 py-2">
             <ProfileAvatar name={profile.full_name} avatarUrl={profile.avatar_url} />
             <span className="min-w-0">
-              <span className="block truncate text-sm font-semibold text-slate-900">{profile.full_name}</span>
-              <span className="block truncate text-xs text-slate-500">
+              <span className="block truncate text-sm font-semibold text-slate-900 dark:text-slate-50">{profile.full_name}</span>
+              <span className="block truncate text-xs text-slate-500 dark:text-slate-400">
                 {profile.course} · {profile.year} year
               </span>
             </span>
           </div>
         )}
-        <p className="px-2 pt-2 text-[11px] leading-relaxed text-slate-400">
+        <p className="px-2 pt-2 text-[11px] leading-relaxed text-slate-400 dark:text-slate-500">
           Campora · Work in Progress
         </p>
       </div>
@@ -95,13 +100,16 @@ export function Sidebar() {
 export function TopBar() {
   const { profile } = useAuth();
   return (
-    <header className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
+    <header className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 px-4 py-3 backdrop-blur lg:hidden">
       <Brand />
-      {profile && (
-        <Link href="/profile" aria-label="Open my profile" className="rounded-full">
-          <ProfileAvatar name={profile.full_name} avatarUrl={profile.avatar_url} size="sm" />
-        </Link>
-      )}
+      <div className="flex items-center gap-1.5">
+        <ThemeToggle />
+        {profile && (
+          <Link href="/profile" aria-label="Open my profile" className="rounded-full">
+            <ProfileAvatar name={profile.full_name} avatarUrl={profile.avatar_url} size="sm" />
+          </Link>
+        )}
+      </div>
     </header>
   );
 }
@@ -118,12 +126,12 @@ export function MobileNav() {
 
   const item = (active: boolean) =>
     `flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium ${
-      active ? "text-indigo-700" : "text-slate-500"
+      active ? "text-indigo-700 dark:text-indigo-300" : "text-slate-500 dark:text-slate-400"
     }`;
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-20 flex items-stretch justify-around border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-20 flex items-stretch justify-around border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 pb-[env(safe-area-inset-bottom)] lg:hidden"
       aria-label="Mobile"
     >
       <Link href="/" className={item(pathname === "/")} aria-current={pathname === "/" ? "page" : undefined}>
