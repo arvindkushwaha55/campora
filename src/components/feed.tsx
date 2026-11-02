@@ -92,7 +92,7 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
 
   return (
     <section
-      className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-[0_1px_3px_rgba(15,23,42,0.05)]"
+      className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)]"
       aria-label="Create a post"
     >
       <div className="flex gap-3">
@@ -147,7 +147,7 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
           type="button"
           onClick={submit}
           disabled={posting}
-          className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:opacity-60"
+          className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 shadow-sm px-5 py-2 text-sm font-semibold text-white transition-colors hover:from-indigo-700 hover:to-violet-700 disabled:opacity-60"
         >
           {posting ? "Posting..." : "Post"}
         </button>
@@ -199,7 +199,7 @@ export function PostCard({
   }
 
   return (
-    <article className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-[0_1px_3px_rgba(15,23,42,0.05)]">
+    <article className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)]">
       <header className="flex items-start gap-3">
         <Link href={`/profile?id=${post.user_id}`} className="rounded-full" aria-label={`Open ${author?.full_name ?? "student"}'s profile`}>
           <ProfileAvatar name={author?.full_name ?? "?"} avatarUrl={author?.avatar_url} />

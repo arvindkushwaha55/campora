@@ -60,9 +60,9 @@ export function LoadingScreen({ label = "Loading..." }: { label?: string }) {
 
 /**
  * Shown to signed-in students whose account is not approved yet (or was
- * rejected). The campus feed stays locked until an admin verifies the
- * student's College ID — this gate is also enforced by the database (RLS),
- * this screen just explains it.
+ * rejected). The campus feed stays locked until an admin approves the
+ * account — this gate is also enforced by the database (RLS); this
+ * screen just explains it.
  */
 export function VerificationScreen({ profile }: { profile: Profile }) {
   const { user, signOut } = useAuth();
@@ -80,7 +80,7 @@ export function VerificationScreen({ profile }: { profile: Profile }) {
       <div className="absolute right-4 top-4">
         <ThemeToggle />
       </div>
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 text-center shadow-[0_1px_3px_rgba(15,23,42,0.05)]">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 text-center shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)]">
         <div className="flex justify-center">
           <Brand />
         </div>
@@ -96,8 +96,8 @@ export function VerificationScreen({ profile }: { profile: Profile }) {
         </h1>
         <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
           {rejected
-            ? "An admin reviewed your details and could not verify your College ID. If you think this is a mistake, please contact your faculty admin with your College ID card."
-            : "Your account is created. An admin will verify your College ID, and then your campus feed unlocks automatically. This usually happens once the admin reviews new signups."}
+            ? "An admin reviewed your account and could not approve it. If you think this is a mistake, please contact your faculty admin."
+            : "Your account is created. An admin will review and approve it, and then your campus feed unlocks automatically. This usually happens once the admin reviews new signups."}
         </p>
         {!rejected && (
           <ul className="mt-5 flex flex-col gap-2.5 text-left text-sm">
@@ -111,7 +111,7 @@ export function VerificationScreen({ profile }: { profile: Profile }) {
             </li>
             <li className="flex items-center gap-2.5">
               <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-amber-100 dark:bg-amber-400/20 text-[11px] font-bold text-amber-700 dark:text-amber-300">2</span>
-              <span className="text-slate-600 dark:text-slate-300">Admin verifies your College ID ({profile.course} · {profile.year} year)</span>
+              <span className="text-slate-600 dark:text-slate-300">Admin approves your account ({profile.course} · {profile.year} year)</span>
             </li>
           </ul>
         )}
@@ -130,7 +130,7 @@ export function VerificationScreen({ profile }: { profile: Profile }) {
 // Wraps signed-in pages: shows the setup screen when the backend keys are
 // missing, a loading state while the session is checked, sends signed-out
 // visitors to /login, and keeps unverified students on the verification
-// screen until an admin approves their College ID.
+// screen until an admin approves their account.
 export function AuthGate({ children }: { children: ReactNode }) {
   const { user, profile, loading } = useAuth();
   const router = useRouter();
@@ -171,7 +171,7 @@ export function AuthCard({
       <div className="absolute right-4 top-4">
         <ThemeToggle />
       </div>
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-[0_1px_3px_rgba(15,23,42,0.05)]">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)]">
         <div className="flex justify-center">
           <Brand />
         </div>
