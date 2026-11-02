@@ -22,12 +22,14 @@ Privacy by design: email addresses are **never** shown to other students — pro
 
 ## Features (implemented)
 
-- **Landing page** — explains the college-exclusive idea and the 3-step joining process.
+- **Landing page** — premium product page: a live-style preview of the real feed with actual campus photos, the college-exclusive idea, feature cards, a campus-life photo strip, the 3-step joining process and a clean footer. No fake counts or testimonials.
 - **College-exclusive signup** — full name, college email (domain-checked), password, course (B.Tech / BCA / BBA / B.Pharmacy / Other), year (1st–4th / Other), optional profile picture.
 - **Login / logout / forgot password** — email + password auth (Supabase Auth), with a working password-reset flow by email.
 - **Verification-pending screen** — unverified students see their verification status, not the feed.
 - **Profiles** — photo, name, course, year, and a short bio (up to 160 characters). Edit your own details and picture; view other verified students' profiles and their posts.
-- **Campus feed** — text posts (up to 1000 characters) with an optional image, newest first, with author name/photo, course/year and timestamp. Loads in pages of 10 with "Load more". Posts are stored in the database, so they survive refresh and re-login.
+- **Campus feed** — text posts (up to 1000 characters) with an optional image, newest first, with author name/photo, course/year and timestamp. Loads in pages of 10 with "Load more". Posts are stored in the database, so they survive refresh and re-login. On wide screens the feed gets a third column: a discovery rail with the college card and the newest verified students. Post cards have a like animation, an options menu for your own posts, and skeleton loading states.
+- **Profiles** — gradient cover header, verified badge, bio and the student’s posts with working likes.
+- **Auth polish** — password show/hide toggle on login, signup and reset; premium auth cards with a brand gradient strip.
 - **Dark theme** — a light/dark toggle (landing page, auth pages, sidebar and mobile top bar). The first visit follows the system preference; the choice is remembered on the device and applied before the page paints, so there is no flash of the wrong theme.
 - **Likes** — like/unlike any post; real counts from the database; the database primary key makes duplicate likes from the same student impossible.
 - **Student discovery** — search verified students by name, filter by course and year.
