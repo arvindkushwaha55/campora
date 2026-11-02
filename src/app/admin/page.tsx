@@ -75,7 +75,7 @@ function AdminDesk() {
 
   if (!profile?.is_admin) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-12 text-center">
+      <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-12 text-center">
         <span className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
           <ShieldIcon className="h-5 w-5" />
         </span>
@@ -113,7 +113,7 @@ function AdminDesk() {
       {loading ? (
         <LoadingScreen label="Loading verification requests" />
       ) : pending.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-10 text-center">
+        <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-10 text-center">
           <p className="font-semibold text-slate-700 dark:text-slate-200">No pending requests</p>
           <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400">
             Every signup has been reviewed. New students will appear here when they register.
@@ -124,7 +124,7 @@ function AdminDesk() {
           {pending.map((s) => (
             <li
               key={s.id}
-              className="flex flex-col gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)] sm:flex-row sm:items-center"
+              className="flex flex-col gap-3 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)] sm:flex-row sm:items-center"
             >
               <div className="flex min-w-0 flex-1 items-center gap-3.5">
                 <ProfileAvatar name={s.full_name} avatarUrl={s.avatar_url} size="lg" />
