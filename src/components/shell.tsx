@@ -12,10 +12,12 @@ import { ThemeToggle } from "./theme-toggle";
 export function Brand() {
   return (
     <span className="flex items-center gap-2.5">
-      <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-gradient-to-br from-pink-200 to-rose-300 shadow-sm ring-1 ring-rose-900/10 text-lg font-extrabold text-rose-900">
+      <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-slate-900 dark:bg-slate-50 font-display text-xl font-black italic text-white shadow-sm dark:text-slate-900">
         C
       </span>
-      <span className="text-[19px] font-extrabold tracking-tight text-slate-900 dark:text-slate-50">Campora</span>
+      <span className="font-display text-[21px] font-bold tracking-tight text-slate-900 dark:text-slate-50">
+        Campora<span className="text-rose-500">.</span>
+      </span>
     </span>
   );
 }
@@ -23,7 +25,7 @@ export function Brand() {
 function navClass(active: boolean) {
   return `flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-[15px] font-semibold transition-all ${
     active
-      ? "bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-600/20"
+      ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/25"
       : "font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-50"
   }`;
 }
@@ -214,11 +216,11 @@ export function RightRail() {
 
   return (
     <aside className="sticky top-0 hidden h-screen w-80 shrink-0 flex-col gap-4 overflow-y-auto px-5 py-6 xl:flex" aria-label="Discover">
-      <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-700 via-indigo-600 to-violet-700 p-5 text-white shadow-lg shadow-indigo-600/20">
+      <section className="band-ink overflow-hidden rounded-3xl p-5 text-white shadow-lg">
         <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-white/70">
           <SparkleIcon className="h-4 w-4" /> Your campus, only
         </p>
-        <h2 className="mt-2 text-lg font-bold leading-snug">
+        <h2 className="mt-2 font-display text-[21px] font-bold leading-snug">
           {college ? college.name : "Your college"}
         </h2>
         <p className="mt-1.5 text-[13px] leading-relaxed text-white/85">

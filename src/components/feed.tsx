@@ -156,7 +156,7 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
           type="button"
           onClick={submit}
           disabled={posting}
-          className="rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 shadow-md shadow-indigo-600/20 px-6 py-2 text-sm font-semibold text-white transition-all hover:from-indigo-700 hover:to-violet-700 active:scale-95 disabled:opacity-60"
+          className="rounded-full bg-indigo-600 px-6 py-2 text-sm font-semibold text-white shadow-md shadow-indigo-600/25 transition-all hover:bg-indigo-700 active:scale-95 disabled:opacity-60"
         >
           {posting ? "Posting..." : "Post"}
         </button>
@@ -323,7 +323,7 @@ export function PostCard({
           <img
             src={post.image_url}
             alt="Photo attached to this post"
-            className="max-h-96 w-full object-cover transition-transform duration-500 hover:scale-[1.015]"
+            className="img-reveal max-h-96 w-full object-cover transition-transform duration-500 hover:scale-[1.015]"
             loading="lazy"
           />
         </div>
