@@ -31,9 +31,9 @@ function ProductPreview() {
     <div className="relative">
       <div
         aria-hidden="true"
-        className="absolute -inset-6 rounded-[36px] bg-gradient-to-br from-pink-300/40 via-indigo-300/30 to-violet-300/40 blur-2xl dark:from-pink-500/15 dark:via-indigo-500/15 dark:to-violet-500/15"
+        className="absolute -inset-3 rotate-2 rounded-[36px] bg-rose-300/60 dark:bg-indigo-500/25 sm:-inset-4"
       />
-      <div className="relative overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl shadow-slate-900/15">
+      <div className="shadow-hard relative overflow-hidden rounded-3xl border border-slate-900/60 bg-white dark:border-slate-700 dark:bg-slate-900">
         <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 px-4 py-3">
           <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
           <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
@@ -146,7 +146,7 @@ export function Landing() {
             </Link>
             <Link
               href="/signup"
-              className="hidden rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-indigo-600/20 transition-all hover:from-indigo-700 hover:to-violet-700 active:scale-95 sm:block"
+              className="hidden rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-indigo-600/25 transition-all hover:bg-indigo-700 active:scale-95 sm:block"
             >
               Create account
             </Link>
@@ -162,11 +162,9 @@ export function Landing() {
                 Exclusively for students of {college.name}
               </span>
             )}
-            <h1 className="mt-5 text-[42px] font-extrabold leading-[1.05] tracking-tight text-slate-900 dark:text-slate-50 sm:text-6xl">
-              Your campus,{" "}
-              <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-rose-500 bg-clip-text text-transparent dark:from-indigo-400 dark:via-violet-400 dark:to-rose-400">
-                connected.
-              </span>
+            <h1 className="mt-6 font-display text-[54px] font-semibold leading-[0.98] tracking-tight text-slate-900 dark:text-slate-50 sm:text-7xl lg:text-[88px]">
+              Your campus,
+              <span className="block italic text-indigo-600 dark:text-indigo-400">connected.</span>
             </h1>
             <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-slate-500 dark:text-slate-400 sm:text-lg lg:mx-0">
               Campora is a private social space for your college — share campus
@@ -176,7 +174,7 @@ export function Landing() {
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
               <Link
                 href="/signup"
-                className="rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 px-7 py-3.5 text-[15px] font-semibold text-white shadow-lg shadow-indigo-600/25 transition-all hover:from-indigo-700 hover:to-violet-700 active:scale-95"
+                className="rounded-full bg-indigo-600 px-7 py-3.5 text-[15px] font-semibold text-white shadow-lg shadow-indigo-600/30 transition-all hover:bg-indigo-700 active:scale-95"
               >
                 Create your account
               </Link>
@@ -202,11 +200,37 @@ export function Landing() {
           <ProductPreview />
         </section>
 
+        {/* Editorial ticker: real moments from the campus feed, nothing invented. */}
+        <div
+          aria-hidden="true"
+          className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden border-y border-slate-900 bg-slate-900 py-3.5 dark:border-slate-700"
+        >
+          <div className="animate-marquee flex w-max">
+            {[0, 1].map((copy) => (
+              <div key={copy} className="flex items-center gap-8 pr-8">
+                {[
+                  "Canteen chronicles",
+                  "Match days at the ground",
+                  "E-Block mornings",
+                  "The campus, after the rain",
+                  "Verified students only",
+                  "One college · one feed",
+                ].map((t) => (
+                  <span key={t} className="flex items-center gap-8 whitespace-nowrap font-display text-[15px] italic text-slate-100">
+                    {t}
+                    <span className="not-italic text-rose-400">✦</span>
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+
         <section id="features" className="scroll-mt-24 pb-4 pt-16">
           <p className="text-center text-xs font-extrabold uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-400">
             Why Campora
           </p>
-          <h2 className="mt-2 text-center text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-50">
+          <h2 className="mt-2 text-center font-display text-4xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
             Built for one campus community
           </h2>
           <div className="mt-9 grid gap-4 sm:grid-cols-3">
@@ -248,7 +272,7 @@ export function Landing() {
           <p className="text-center text-xs font-extrabold uppercase tracking-[0.18em] text-rose-500 dark:text-rose-400">
             Campus life
           </p>
-          <h2 className="mt-2 text-center text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-50">
+          <h2 className="mt-2 text-center font-display text-4xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
             Moments from around RKGIT
           </h2>
           <div className="mt-9 grid gap-4 sm:grid-cols-3">
@@ -274,7 +298,7 @@ export function Landing() {
         </section>
 
         <section id="how" className="scroll-mt-24 pt-16">
-          <h2 className="text-center text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-50">
+          <h2 className="text-center font-display text-4xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
             How joining works
           </h2>
           <div className="mx-auto mt-9 grid max-w-4xl gap-4 sm:grid-cols-3">
@@ -298,7 +322,7 @@ export function Landing() {
         </section>
 
         <section className="pb-20 pt-16">
-          <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-indigo-700 via-indigo-600 to-violet-700 px-6 py-12 text-center shadow-xl shadow-indigo-600/25 sm:px-12">
+          <div className="band-ink relative overflow-hidden rounded-[32px] px-6 py-12 text-center shadow-xl sm:px-12">
             <div
               aria-hidden="true"
               className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/15 blur-2xl"
@@ -307,8 +331,8 @@ export function Landing() {
               aria-hidden="true"
               className="pointer-events-none absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-pink-300/25 blur-2xl"
             />
-            <h2 className="relative text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-              Your campus is waiting.
+            <h2 className="relative font-display text-4xl font-semibold tracking-tight text-white sm:text-5xl">
+              Your campus is <span className="italic text-rose-300">waiting.</span>
             </h2>
             <p className="relative mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-white/85">
               Create your account with your college email and join your
