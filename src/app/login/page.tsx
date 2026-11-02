@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
-import { AuthCard, NotConfigured, PasswordInput, inputClass, labelClass } from "@/components/common";
+import { AuthCard, GuestEntry, NotConfigured, PasswordInput, inputClass, labelClass } from "@/components/common";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -87,6 +87,9 @@ export default function LoginPage() {
           Forgot your password?
         </Link>
       </p>
+      <div className="mt-6 border-t border-slate-100 dark:border-slate-800 pt-5">
+        <GuestEntry />
+      </div>
       <p className="mt-5 text-center text-sm text-slate-500 dark:text-slate-400">
         New to Campora?{" "}
         <Link href="/signup" className="font-semibold text-indigo-700 dark:text-indigo-300 hover:underline">
