@@ -139,16 +139,24 @@ function Feed() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
+      <div>
+        <h1 className="text-[26px] font-extrabold tracking-tight text-slate-900 dark:text-slate-50">
+          Campus Feed
+        </h1>
+        <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+          What&rsquo;s happening around your college, from verified students only.
+        </p>
+      </div>
+
       <Composer onPosted={reload} />
 
       <section aria-label="Campus feed" className="flex flex-col gap-4">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-50">Campus Feed</h2>
 
         {loading ? (
           <LoadingScreen label="Loading the feed" />
         ) : error ? (
-          <div className="rounded-2xl border border-dashed border-red-200 bg-white dark:bg-slate-900 px-4 py-8 text-center">
+          <div className="rounded-3xl border border-dashed border-red-200 bg-white dark:bg-slate-900 px-4 py-8 text-center">
             <p className="text-sm text-red-600">{error}</p>
             <button
               type="button"
@@ -159,7 +167,7 @@ function Feed() {
             </button>
           </div>
         ) : posts.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-10 text-center">
+          <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-10 text-center">
             <p className="font-semibold text-slate-700 dark:text-slate-200">No posts yet</p>
             <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400">
               The campus feed is empty. Be the first to share an update using the box above.
@@ -219,7 +227,7 @@ export default function HomePage() {
     return <VerificationScreen profile={profile} />;
   }
   return (
-    <AppShell>
+    <AppShell rail>
       <Feed />
     </AppShell>
   );
