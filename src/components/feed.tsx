@@ -176,13 +176,15 @@ export function PostCard({
   likedByMe?: boolean;
   onToggleLike?: (post: Post) => void;
 }) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [pop, setPop] = useState(false);
   const [error, setError] = useState("");
   const mine = user?.id === post.user_id;
+  // Admins moderate the feed: they can delete anyone's post (RLS allows it).
+  const canDelete = mine || profile?.is_admin === true;
   const author = post.profiles;
 
   function handleLikeClick() {
@@ -232,7 +234,7 @@ export function PostCard({
             {author ? `${author.course} · ${author.year} year` : ""} · {formatDateTime(post.created_at)}
           </p>
         </div>
-        {mine && (
+        {canDelete && (
           <div className="relative shrink-0">
             <button
               type="button"

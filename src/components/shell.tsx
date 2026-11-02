@@ -222,7 +222,7 @@ export function RightRail() {
           {college ? college.name : "Your college"}
         </h2>
         <p className="mt-1.5 text-[13px] leading-relaxed text-white/85">
-          Every account here is a verified student — college email plus admin approval.
+          Every account here is a verified student — college email, confirmed by email link.
         </p>
         {college && (
           <span className="mt-3.5 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold backdrop-blur">
