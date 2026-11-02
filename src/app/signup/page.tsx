@@ -174,7 +174,7 @@ export default function SignupPage() {
             placeholder="e.g. 2500331530079"
             className={inputClass}
           />
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
             Kept private — other students never see your College ID.
           </p>
         </div>
@@ -235,7 +235,7 @@ export default function SignupPage() {
           <p role="alert" className="text-sm text-red-600">{error}</p>
         )}
         {notice && (
-          <p role="status" className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+          <p role="status" className="rounded-lg bg-emerald-50 dark:bg-emerald-400/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300">
             {notice}{" "}
             <Link href="/login" className="font-semibold underline">Go to login</Link>
           </p>
@@ -248,9 +248,9 @@ export default function SignupPage() {
           {submitting ? "Creating account..." : "Create account"}
         </button>
       </form>
-      <p className="mt-5 text-center text-sm text-slate-500">
+      <p className="mt-5 text-center text-sm text-slate-500 dark:text-slate-400">
         Already have an account?{" "}
-        <Link href="/login" className="font-semibold text-indigo-700 hover:underline">
+        <Link href="/login" className="font-semibold text-indigo-700 dark:text-indigo-300 hover:underline">
           Log in
         </Link>
       </p>
