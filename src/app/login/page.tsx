@@ -85,13 +85,13 @@ export default function LoginPage() {
         </button>
       </form>
       <p className="mt-4 text-center text-sm">
-        <Link href="/forgot-password" className="font-medium text-slate-500 hover:text-indigo-700 hover:underline">
+        <Link href="/forgot-password" className="font-medium text-slate-500 dark:text-slate-400 hover:text-indigo-700 hover:underline">
           Forgot your password?
         </Link>
       </p>
-      <p className="mt-5 text-center text-sm text-slate-500">
+      <p className="mt-5 text-center text-sm text-slate-500 dark:text-slate-400">
         New to Campora?{" "}
-        <Link href="/signup" className="font-semibold text-indigo-700 hover:underline">
+        <Link href="/signup" className="font-semibold text-indigo-700 dark:text-indigo-300 hover:underline">
           Create an account
         </Link>
       </p>

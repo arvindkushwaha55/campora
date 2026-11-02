@@ -6,8 +6,8 @@ export default function NotFound() {
       <span className="grid h-14 w-14 place-items-center rounded-2xl bg-pink-200 text-2xl font-extrabold text-rose-900">
         C
       </span>
-      <h1 className="text-2xl font-extrabold text-slate-900">Page not found</h1>
-      <p className="max-w-sm text-[15px] leading-relaxed text-slate-500">
+      <h1 className="text-2xl font-extrabold text-slate-900 dark:text-slate-50">Page not found</h1>
+      <p className="max-w-sm text-[15px] leading-relaxed text-slate-500 dark:text-slate-400">
         This page does not exist on Campora. The link may be wrong, or the page may have
         moved.
       </p>
@@ -17,7 +17,7 @@ export default function NotFound() {
       >
         Back to the campus feed
       </Link>
-      <p className="mt-4 text-xs text-slate-400">
+      <p className="mt-4 text-xs text-slate-400 dark:text-slate-500">
         Campora — a personal mini project, Work in Progress.
       </p>
     </main>

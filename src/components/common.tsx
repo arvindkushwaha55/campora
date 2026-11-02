@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth";
 import type { College, Profile } from "@/lib/constants";
 import { Brand } from "./shell";
 import { CameraIcon, ProfileAvatar } from "./icons";
+import { ThemeToggle } from "./theme-toggle";
 
 /** Loads the configured college (name + approved email domain), if any. */
 export function useCollege(): College | null {
@@ -35,12 +36,12 @@ export function NotConfigured() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-3 px-4 text-center">
       <Brand />
-      <h1 className="mt-2 text-xl font-bold text-slate-900">Campora is not connected yet</h1>
-      <p className="max-w-md text-[15px] leading-relaxed text-slate-500">
+      <h1 className="mt-2 text-xl font-bold text-slate-900 dark:text-slate-50">Campora is not connected yet</h1>
+      <p className="max-w-md text-[15px] leading-relaxed text-slate-500 dark:text-slate-400">
         The Supabase backend keys are missing, so login and posts cannot work yet. Add{" "}
-        <code className="rounded bg-slate-100 px-1 py-0.5 text-[13px]">NEXT_PUBLIC_SUPABASE_URL</code>{" "}
+        <code className="rounded bg-slate-100 dark:bg-slate-800 px-1 py-0.5 text-[13px]">NEXT_PUBLIC_SUPABASE_URL</code>{" "}
         and{" "}
-        <code className="rounded bg-slate-100 px-1 py-0.5 text-[13px]">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>{" "}
+        <code className="rounded bg-slate-100 dark:bg-slate-800 px-1 py-0.5 text-[13px]">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>{" "}
         to the environment (see the README setup steps) and reload.
       </p>
     </main>
@@ -50,9 +51,9 @@ export function NotConfigured() {
 export function LoadingScreen({ label = "Loading..." }: { label?: string }) {
   return (
     <div className="flex flex-col gap-4" aria-label={label}>
-      <div className="h-36 animate-pulse rounded-2xl bg-slate-200/70" />
-      <div className="h-56 animate-pulse rounded-2xl bg-slate-200/70" />
-      <div className="h-56 animate-pulse rounded-2xl bg-slate-200/70" />
+      <div className="h-36 animate-pulse rounded-2xl bg-slate-200/70 dark:bg-slate-800" />
+      <div className="h-56 animate-pulse rounded-2xl bg-slate-200/70 dark:bg-slate-800" />
+      <div className="h-56 animate-pulse rounded-2xl bg-slate-200/70 dark:bg-slate-800" />
     </div>
   );
 }
@@ -75,22 +76,25 @@ export function VerificationScreen({ profile }: { profile: Profile }) {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-[0_1px_3px_rgba(15,23,42,0.05)]">
+    <main className="relative flex min-h-screen flex-col items-center justify-center px-4 py-10">
+      <div className="absolute right-4 top-4">
+        <ThemeToggle />
+      </div>
+      <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 text-center shadow-[0_1px_3px_rgba(15,23,42,0.05)]">
         <div className="flex justify-center">
           <Brand />
         </div>
         <span
           className={`mt-5 inline-block rounded-full px-3 py-1 text-xs font-bold ${
-            rejected ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"
+            rejected ? "bg-red-50 dark:bg-red-400/10 text-red-700 dark:text-red-300" : "bg-amber-50 dark:bg-amber-400/10 text-amber-700 dark:text-amber-300"
           }`}
         >
           {rejected ? "Verification not approved" : "Verification pending"}
         </span>
-        <h1 className="mt-3 text-xl font-bold text-slate-900">
+        <h1 className="mt-3 text-xl font-bold text-slate-900 dark:text-slate-50">
           {rejected ? "Your account was not approved" : "One more step, " + profile.full_name.split(" ")[0]}
         </h1>
-        <p className="mt-2 text-sm leading-relaxed text-slate-500">
+        <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
           {rejected
             ? "An admin reviewed your details and could not verify your College ID. If you think this is a mistake, please contact your faculty admin with your College ID card."
             : "Your account is created. An admin will verify your College ID, and then your campus feed unlocks automatically. This usually happens once the admin reviews new signups."}
@@ -98,23 +102,23 @@ export function VerificationScreen({ profile }: { profile: Profile }) {
         {!rejected && (
           <ul className="mt-5 flex flex-col gap-2.5 text-left text-sm">
             <li className="flex items-center gap-2.5">
-              <span className={`grid h-5 w-5 shrink-0 place-items-center rounded-full text-[11px] font-bold ${emailConfirmed ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+              <span className={`grid h-5 w-5 shrink-0 place-items-center rounded-full text-[11px] font-bold ${emailConfirmed ? "bg-emerald-100 dark:bg-emerald-400/20 text-emerald-700 dark:text-emerald-300" : "bg-amber-100 dark:bg-amber-400/20 text-amber-700 dark:text-amber-300"}`}>
                 {emailConfirmed ? "✓" : "1"}
               </span>
-              <span className="text-slate-600">
+              <span className="text-slate-600 dark:text-slate-300">
                 {emailConfirmed ? "Email verified" : "Confirm your email from the link we sent you"}
               </span>
             </li>
             <li className="flex items-center gap-2.5">
-              <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-amber-100 text-[11px] font-bold text-amber-700">2</span>
-              <span className="text-slate-600">Admin verifies your College ID ({profile.course} · {profile.year} year)</span>
+              <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-amber-100 dark:bg-amber-400/20 text-[11px] font-bold text-amber-700 dark:text-amber-300">2</span>
+              <span className="text-slate-600 dark:text-slate-300">Admin verifies your College ID ({profile.course} · {profile.year} year)</span>
             </li>
           </ul>
         )}
         <button
           type="button"
           onClick={handleLogout}
-          className="mt-6 w-full rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+          className="mt-6 w-full rounded-lg border border-slate-200 dark:border-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-600 dark:text-slate-300 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
         >
           Log out
         </button>
@@ -163,16 +167,19 @@ export function AuthCard({
   children: ReactNode;
 }) {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.05)]">
+    <main className="relative flex min-h-screen flex-col items-center justify-center px-4 py-10">
+      <div className="absolute right-4 top-4">
+        <ThemeToggle />
+      </div>
+      <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-[0_1px_3px_rgba(15,23,42,0.05)]">
         <div className="flex justify-center">
           <Brand />
         </div>
-        <h1 className="mt-5 text-center text-xl font-bold text-slate-900">{title}</h1>
-        <p className="mt-1 text-center text-sm text-slate-500">{subtitle}</p>
+        <h1 className="mt-5 text-center text-xl font-bold text-slate-900 dark:text-slate-50">{title}</h1>
+        <p className="mt-1 text-center text-sm text-slate-500 dark:text-slate-400">{subtitle}</p>
         <div className="mt-6">{children}</div>
       </div>
-      <p className="mt-4 text-center text-xs text-slate-400">
+      <p className="mt-4 text-center text-xs text-slate-400 dark:text-slate-500">
         Campora — a personal mini project, Work in Progress.
       </p>
     </main>
@@ -206,7 +213,7 @@ export function ProfileAvatarInput({
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
-          className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:border-pink-300 hover:text-pink-700"
+          className="flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 transition-colors hover:border-pink-300 hover:text-pink-700"
         >
           <CameraIcon className="h-4.5 w-4.5" /> {preview ? "Change photo" : "Add photo"}
         </button>
@@ -223,6 +230,6 @@ export function ProfileAvatarInput({
 }
 
 export const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[15px] text-slate-900 outline-none placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100";
+  "w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 px-3 py-2.5 text-[15px] text-slate-900 dark:text-slate-50 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100";
 
-export const labelClass = "mb-1.5 block text-sm font-medium text-slate-700";
+export const labelClass = "mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200";

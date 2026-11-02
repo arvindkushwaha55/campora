@@ -92,7 +92,7 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
 
   return (
     <section
-      className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.05)]"
+      className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-[0_1px_3px_rgba(15,23,42,0.05)]"
       aria-label="Create a post"
     >
       <div className="flex gap-3">
@@ -105,7 +105,7 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
           rows={3}
           maxLength={MAX_POST_LENGTH + 50}
           placeholder="Share something about campus today..."
-          className="w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[15px] text-slate-900 outline-none placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+          className="w-full resize-y rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 px-3 py-2.5 text-[15px] text-slate-900 dark:text-slate-50 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100"
           aria-label="Write a post"
         />
       </div>
@@ -129,7 +129,7 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
-          className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:border-pink-300 hover:text-pink-700"
+          className="flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 transition-colors hover:border-pink-300 hover:text-pink-700"
         >
           <ImageIcon className="h-4.5 w-4.5" /> Add photo
         </button>
@@ -140,7 +140,7 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
           className="hidden"
           onChange={(e) => pickImage(e.target.files?.[0] ?? null)}
         />
-        <span className="ml-auto text-xs text-slate-400">
+        <span className="ml-auto text-xs text-slate-400 dark:text-slate-500">
           {text.length}/{MAX_POST_LENGTH}
         </span>
         <button
@@ -199,7 +199,7 @@ export function PostCard({
   }
 
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.05)]">
+    <article className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-[0_1px_3px_rgba(15,23,42,0.05)]">
       <header className="flex items-start gap-3">
         <Link href={`/profile?id=${post.user_id}`} className="rounded-full" aria-label={`Open ${author?.full_name ?? "student"}'s profile`}>
           <ProfileAvatar name={author?.full_name ?? "?"} avatarUrl={author?.avatar_url} />
@@ -207,11 +207,11 @@ export function PostCard({
         <div className="min-w-0 flex-1">
           <Link
             href={`/profile?id=${post.user_id}`}
-            className="block max-w-full truncate text-left text-[15px] font-semibold text-slate-900 hover:underline"
+            className="block max-w-full truncate text-left text-[15px] font-semibold text-slate-900 dark:text-slate-50 hover:underline"
           >
             {author?.full_name ?? "Student"}
           </Link>
-          <p className="truncate text-[13px] text-slate-500">
+          <p className="truncate text-[13px] text-slate-500 dark:text-slate-400">
             {author ? `${author.course} · ${author.year} year` : ""} · {formatDateTime(post.created_at)}
           </p>
         </div>
@@ -229,7 +229,7 @@ export function PostCard({
               <button
                 type="button"
                 onClick={() => setConfirming(false)}
-                className="rounded-full px-2.5 py-1.5 text-[13px] text-slate-500 hover:bg-slate-50"
+                className="rounded-full px-2.5 py-1.5 text-[13px] text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
               >
                 Cancel
               </button>
@@ -238,7 +238,7 @@ export function PostCard({
             <button
               type="button"
               onClick={() => setConfirming(true)}
-              className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-[13px] text-slate-400 hover:bg-red-50 hover:text-red-600"
+              className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-[13px] text-slate-400 dark:text-slate-500 hover:bg-red-50 hover:text-red-600"
               aria-label="Delete my post"
             >
               <TrashIcon className="h-4 w-4" /> Delete
@@ -246,7 +246,7 @@ export function PostCard({
           ))}
       </header>
 
-      <p className="mt-2 whitespace-pre-wrap text-[15px] leading-relaxed text-slate-800">{post.text}</p>
+      <p className="mt-2 whitespace-pre-wrap text-[15px] leading-relaxed text-slate-800 dark:text-slate-100">{post.text}</p>
 
       {post.image_url && (
         // eslint-disable-next-line @next/next/no-img-element
@@ -259,15 +259,15 @@ export function PostCard({
       )}
 
       {onToggleLike && (
-        <div className="mt-3 flex items-center gap-2 border-t border-slate-100 pt-3">
+        <div className="mt-3 flex items-center gap-2 border-t border-slate-100 dark:border-slate-800 pt-3">
           <button
             type="button"
             onClick={() => onToggleLike(post)}
             aria-pressed={likedByMe}
             className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold transition-colors ${
               likedByMe
-                ? "bg-rose-50 text-rose-600"
-                : "text-slate-500 hover:bg-rose-50 hover:text-rose-600"
+                ? "bg-rose-50 dark:bg-rose-400/10 text-rose-600"
+                : "text-slate-500 dark:text-slate-400 hover:bg-rose-50 hover:text-rose-600"
             }`}
           >
             <HeartIcon className="h-4.5 w-4.5" fill={likedByMe ? "currentColor" : "none"} />

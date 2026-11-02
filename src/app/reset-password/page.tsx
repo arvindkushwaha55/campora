@@ -71,18 +71,18 @@ export default function ResetPasswordPage() {
   return (
     <AuthCard title="Set a new password" subtitle="Choose a new password for your Campora account.">
       {!ready ? (
-        <p className="text-center text-sm text-slate-500">Checking your reset link...</p>
+        <p className="text-center text-sm text-slate-500 dark:text-slate-400">Checking your reset link...</p>
       ) : done ? (
-        <p role="status" className="rounded-lg bg-emerald-50 px-3 py-2.5 text-center text-sm text-emerald-700">
+        <p role="status" className="rounded-lg bg-emerald-50 dark:bg-emerald-400/10 px-3 py-2.5 text-center text-sm text-emerald-700 dark:text-emerald-300">
           Password updated. Taking you to the login page...
         </p>
       ) : !hasSession ? (
         <div className="flex flex-col gap-3 text-center">
-          <p className="text-sm leading-relaxed text-slate-500">
+          <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-400">
             This page only works from a fresh password-reset email link. Your link
             may have expired or already been used.
           </p>
-          <Link href="/forgot-password" className="text-sm font-semibold text-indigo-700 hover:underline">
+          <Link href="/forgot-password" className="text-sm font-semibold text-indigo-700 dark:text-indigo-300 hover:underline">
             Request a new reset link
           </Link>
         </div>

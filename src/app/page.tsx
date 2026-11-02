@@ -113,25 +113,25 @@ function Feed() {
       <Composer onPosted={reload} />
 
       <section aria-label="Campus feed" className="flex flex-col gap-4">
-        <h2 className="text-lg font-bold text-slate-900">Campus Feed</h2>
+        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-50">Campus Feed</h2>
 
         {loading ? (
           <LoadingScreen label="Loading the feed" />
         ) : error ? (
-          <div className="rounded-2xl border border-dashed border-red-200 bg-white px-4 py-8 text-center">
+          <div className="rounded-2xl border border-dashed border-red-200 bg-white dark:bg-slate-900 px-4 py-8 text-center">
             <p className="text-sm text-red-600">{error}</p>
             <button
               type="button"
               onClick={reload}
-              className="mt-3 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50"
+              className="mt-3 rounded-lg border border-slate-200 dark:border-slate-800 px-4 py-2 text-sm font-semibold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50"
             >
               Try again
             </button>
           </div>
         ) : posts.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center">
-            <p className="font-semibold text-slate-700">No posts yet</p>
-            <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
+          <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-10 text-center">
+            <p className="font-semibold text-slate-700 dark:text-slate-200">No posts yet</p>
+            <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400">
               The campus feed is empty. Be the first to share an update using the box above.
             </p>
           </div>
@@ -156,7 +156,7 @@ function Feed() {
                   await loadPage(pageRef.current + 1, true);
                   setLoadingMore(false);
                 }}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-60"
+                className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm font-semibold text-slate-600 dark:text-slate-300 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60"
               >
                 {loadingMore ? "Loading..." : "Load more posts"}
               </button>
@@ -165,7 +165,7 @@ function Feed() {
         )}
       </section>
 
-      <footer className="pt-2 text-center text-[13px] leading-relaxed text-slate-400">
+      <footer className="pt-2 text-center text-[13px] leading-relaxed text-slate-400 dark:text-slate-500">
         Campora — a personal mini project, Work in Progress. Posts are shared with other
         verified students of your college.
       </footer>

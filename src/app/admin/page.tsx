@@ -84,12 +84,12 @@ function AdminDesk() {
 
   if (!profile?.is_admin) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-12 text-center">
-        <span className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-slate-100 text-slate-500">
+      <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-12 text-center">
+        <span className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
           <ShieldIcon className="h-5 w-5" />
         </span>
-        <p className="mt-3 font-semibold text-slate-700">Admins only</p>
-        <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
+        <p className="mt-3 font-semibold text-slate-700 dark:text-slate-200">Admins only</p>
+        <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400">
           This page is for Campora admins who verify new students. Your account
           does not have admin access.
         </p>
@@ -100,30 +100,30 @@ function AdminDesk() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="flex items-center gap-2 text-xl font-bold text-slate-900">
-          <ShieldIcon className="h-5.5 w-5.5 text-indigo-600" /> Verification desk
+        <h1 className="flex items-center gap-2 text-xl font-bold text-slate-900 dark:text-slate-50">
+          <ShieldIcon className="h-5.5 w-5.5 text-indigo-600 dark:text-indigo-400" /> Verification desk
         </h1>
-        <p className="mt-0.5 text-sm text-slate-500">
+        <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
           Review new signups and verify each student&rsquo;s College ID before approving.
           College IDs on this page are visible only to admins.
         </p>
       </div>
 
       {decided > 0 && (
-        <p role="status" className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+        <p role="status" className="rounded-lg bg-emerald-50 dark:bg-emerald-400/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300">
           {decided} decision{decided === 1 ? "" : "s"} saved this session.
         </p>
       )}
       {error && (
-        <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+        <p role="alert" className="rounded-lg bg-red-50 dark:bg-red-400/10 px-3 py-2 text-sm text-red-600">{error}</p>
       )}
 
       {loading ? (
         <LoadingScreen label="Loading verification requests" />
       ) : pending.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center">
-          <p className="font-semibold text-slate-700">No pending requests</p>
-          <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
+        <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-10 text-center">
+          <p className="font-semibold text-slate-700 dark:text-slate-200">No pending requests</p>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400">
             Every signup has been reviewed. New students will appear here when they register.
           </p>
         </div>
@@ -132,18 +132,18 @@ function AdminDesk() {
           {pending.map((s) => (
             <li
               key={s.id}
-              className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.05)] sm:flex-row sm:items-center"
+              className="flex flex-col gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-[0_1px_3px_rgba(15,23,42,0.05)] sm:flex-row sm:items-center"
             >
               <div className="flex min-w-0 flex-1 items-center gap-3.5">
                 <ProfileAvatar name={s.full_name} avatarUrl={s.avatar_url} size="lg" />
                 <div className="min-w-0">
-                  <p className="truncate font-semibold text-slate-900">{s.full_name}</p>
-                  <p className="text-sm text-slate-500">{s.course} · {s.year} year</p>
-                  <p className="mt-0.5 text-sm text-slate-500">
+                  <p className="truncate font-semibold text-slate-900 dark:text-slate-50">{s.full_name}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">{s.course} · {s.year} year</p>
+                  <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
                     College ID:{" "}
-                    <span className="font-mono font-semibold text-slate-700">{s.college_id ?? "—"}</span>
+                    <span className="font-mono font-semibold text-slate-700 dark:text-slate-200">{s.college_id ?? "—"}</span>
                   </p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-400 dark:text-slate-500">
                     Signed up{" "}
                     {new Date(s.created_at).toLocaleDateString("en-IN", {
                       day: "numeric",
