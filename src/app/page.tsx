@@ -9,8 +9,9 @@ import { LoadingScreen, NotConfigured, VerificationScreen } from "@/components/c
 import { Landing } from "@/components/landing";
 import { Composer, PostCard } from "@/components/feed";
 
-const POST_SELECT =
-  "id, user_id, text, image_url, created_at, profiles(full_name, avatar_url, course, year)";
+const POST_COLUMNS = "id, user_id, text, image_url, created_at";
+
+type PostRow = Omit<Post, "profiles">;
 
 function Feed() {
   const { user } = useAuth();
@@ -50,18 +51,47 @@ function Feed() {
       const from = page * FEED_PAGE_SIZE;
       const { data, error: loadError } = await supabase
         .from("posts")
-        .select(POST_SELECT)
+        .select(POST_COLUMNS)
         .order("created_at", { ascending: false })
         .range(from, from + FEED_PAGE_SIZE - 1);
       if (loadError) {
         if (!append) setError("Could not load the feed. Please try again.");
         return;
       }
-      const rows = (data as unknown as Post[]) ?? [];
+      const rows = (data as unknown as PostRow[]) ?? [];
+      // Author details are loaded with a separate profiles query and merged
+      // in here, instead of a PostgREST embed ("profiles(...)") — the embed
+      // made the whole feed fail whenever the posts↔profiles join could not
+      // be resolved, even though both tables were readable on their own.
+      let profilesById = new Map<string, NonNullable<Post["profiles"]>>();
+      const authorIds = [...new Set(rows.map((r) => r.user_id))];
+      if (authorIds.length > 0) {
+        const { data: authors } = await supabase
+          .from("profiles")
+          .select("id, full_name, avatar_url, course, year")
+          .in("id", authorIds);
+        if (authors) {
+          profilesById = new Map(
+            authors.map((a) => [
+              a.id,
+              {
+                full_name: a.full_name,
+                avatar_url: a.avatar_url,
+                course: a.course,
+                year: a.year,
+              },
+            ])
+          );
+        }
+      }
+      const posts: Post[] = rows.map((r) => ({
+        ...r,
+        profiles: profilesById.get(r.user_id) ?? null,
+      }));
       setHasMore(rows.length === FEED_PAGE_SIZE);
-      setPosts((prev) => (append ? [...prev, ...rows] : rows));
+      setPosts((prev) => (append ? [...prev, ...posts] : posts));
       pageRef.current = page;
-      await loadLikes(rows);
+      await loadLikes(posts);
     },
     [loadLikes]
   );

@@ -9,7 +9,7 @@ import { ThemeToggle } from "./theme-toggle";
 export function Brand() {
   return (
     <span className="flex items-center gap-2.5">
-      <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-pink-200 text-lg font-extrabold text-rose-900">
+      <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-gradient-to-br from-pink-200 to-rose-300 shadow-sm ring-1 ring-rose-900/10 text-lg font-extrabold text-rose-900">
         C
       </span>
       <span className="text-[19px] font-extrabold tracking-tight text-slate-900 dark:text-slate-50">Campora</span>

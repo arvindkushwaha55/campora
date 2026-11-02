@@ -24,7 +24,7 @@ export default function AdminPage() {
   );
 }
 
-type PendingStudent = Profile & { college_id: string | null };
+type PendingStudent = Profile;
 
 function AdminDesk() {
   const { profile } = useAuth();
@@ -47,16 +47,7 @@ function AdminDesk() {
       setLoading(false);
       return;
     }
-    const rows = (data as Profile[]) ?? [];
-    let collegeIds = new Map<string, string>();
-    if (rows.length > 0) {
-      const { data: priv } = await supabase
-        .from("student_private")
-        .select("user_id, college_id")
-        .in("user_id", rows.map((r) => r.id));
-      collegeIds = new Map((priv ?? []).map((p) => [p.user_id, p.college_id]));
-    }
-    setPending(rows.map((r) => ({ ...r, college_id: collegeIds.get(r.id) ?? null })));
+    setPending((data as Profile[]) ?? []);
     setLoading(false);
   }, []);
 
@@ -104,8 +95,9 @@ function AdminDesk() {
           <ShieldIcon className="h-5.5 w-5.5 text-indigo-600 dark:text-indigo-400" /> Verification desk
         </h1>
         <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-          Review new signups and verify each student&rsquo;s College ID before approving.
-          College IDs on this page are visible only to admins.
+          Review new signups and approve students of your college. Every account
+          already registered with a college email address — approve people you
+          recognize as students here.
         </p>
       </div>
 
@@ -132,17 +124,13 @@ function AdminDesk() {
           {pending.map((s) => (
             <li
               key={s.id}
-              className="flex flex-col gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-[0_1px_3px_rgba(15,23,42,0.05)] sm:flex-row sm:items-center"
+              className="flex flex-col gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)] sm:flex-row sm:items-center"
             >
               <div className="flex min-w-0 flex-1 items-center gap-3.5">
                 <ProfileAvatar name={s.full_name} avatarUrl={s.avatar_url} size="lg" />
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-slate-900 dark:text-slate-50">{s.full_name}</p>
                   <p className="text-sm text-slate-500 dark:text-slate-400">{s.course} · {s.year} year</p>
-                  <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-                    College ID:{" "}
-                    <span className="font-mono font-semibold text-slate-700 dark:text-slate-200">{s.college_id ?? "—"}</span>
-                  </p>
                   <p className="text-xs text-slate-400 dark:text-slate-500">
                     Signed up{" "}
                     {new Date(s.created_at).toLocaleDateString("en-IN", {

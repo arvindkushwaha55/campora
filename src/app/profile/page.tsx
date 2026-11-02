@@ -95,7 +95,7 @@ function OtherProfile({ id }: { id: string }) {
       <Link href="/" className="self-start rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-1.5 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900">
         ← Back to feed
       </Link>
-      <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-[0_1px_3px_rgba(15,23,42,0.05)]" aria-label={`${profile.full_name}'s profile`}>
+      <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)]" aria-label={`${profile.full_name}'s profile`}>
         <div className="flex items-center gap-4">
           <ProfileAvatar name={profile.full_name} avatarUrl={profile.avatar_url} size="lg" />
           <div className="min-w-0">
@@ -122,30 +122,11 @@ function MyProfile() {
   const [course, setCourse] = useState<string>(COURSES[0]);
   const [year, setYear] = useState<string>(YEARS[0]);
   const [bio, setBio] = useState("");
-  const [collegeId, setCollegeId] = useState<string | null>(null);
   const [avatar, setAvatar] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState("");
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
-
-  // Your own College ID lives in the private table — only you (and admins)
-  // can read it. Shown on your own profile so you can check it.
-  useEffect(() => {
-    if (!supabase || !profile) return;
-    let active = true;
-    supabase
-      .from("student_private")
-      .select("college_id")
-      .eq("user_id", profile.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (active) setCollegeId(data?.college_id ?? null);
-      });
-    return () => {
-      active = false;
-    };
-  }, [profile]);
 
   if (!profile || !user) return <LoadingScreen label="Loading your profile" />;
 
@@ -222,7 +203,7 @@ function MyProfile() {
 
   return (
     <div className="flex flex-col gap-4">
-      <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-[0_1px_3px_rgba(15,23,42,0.05)]" aria-label="My profile">
+      <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)]" aria-label="My profile">
         <div className="flex flex-wrap items-center gap-4">
           <ProfileAvatar name={profile.full_name} avatarUrl={profile.avatar_url} size="lg" />
           <div className="min-w-0 flex-1">
@@ -247,12 +228,6 @@ function MyProfile() {
                   : "Verification pending"}
               {profile.is_admin ? " · Admin" : ""}
             </span>
-            {collegeId && (
-              <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
-                College ID: <span className="font-mono font-semibold text-slate-700 dark:text-slate-200">{collegeId}</span>{" "}
-                <span className="text-xs text-slate-400 dark:text-slate-500">(only you can see this)</span>
-              </p>
-            )}
             {profile.bio && (
               <p className="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{profile.bio}</p>
             )}
@@ -261,7 +236,7 @@ function MyProfile() {
             <button
               type="button"
               onClick={startEditing}
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
+              className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 shadow-sm px-4 py-2 text-sm font-semibold text-white transition-colors hover:from-indigo-700 hover:to-violet-700"
             >
               Edit profile
             </button>
@@ -325,7 +300,7 @@ function MyProfile() {
               <button
                 type="submit"
                 disabled={saving}
-                className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:opacity-60"
+                className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 shadow-sm px-5 py-2 text-sm font-semibold text-white transition-colors hover:from-indigo-700 hover:to-violet-700 disabled:opacity-60"
               >
                 {saving ? "Saving..." : "Save changes"}
               </button>

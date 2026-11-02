@@ -13,7 +13,6 @@ export default function SignupPage() {
   const { user, loading } = useAuth();
   const college = useCollege();
   const [fullName, setFullName] = useState("");
-  const [collegeId, setCollegeId] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [course, setCourse] = useState<string>(COURSES[0]);
@@ -60,11 +59,6 @@ export default function SignupPage() {
       setError("Please enter your full name.");
       return;
     }
-    const cid = collegeId.trim();
-    if (cid.length < 3) {
-      setError("Please enter your College ID / enrollment number.");
-      return;
-    }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       setError("Please enter a valid email address.");
       return;
@@ -82,19 +76,11 @@ export default function SignupPage() {
     }
 
     setSubmitting(true);
-    // Early duplicate warning (the unique College ID index is the real lock).
-    const { data: available } = await supabase.rpc("college_id_available", { cid });
-    if (available === false) {
-      setSubmitting(false);
-      setError("This College ID is already registered. If it is yours, please log in instead.");
-      return;
-    }
-
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: {
-        data: { full_name: name, course, year, college_id: cid },
+        data: { full_name: name, course, year },
         emailRedirectTo: siteUrl("/"),
       },
     });
@@ -106,19 +92,19 @@ export default function SignupPage() {
         msg.includes("already") || msg.includes("registered")
           ? "An account with this email already exists. Please log in instead."
           : msg.includes("database error")
-            ? "Signup was rejected by the server. Please check that you used your college email address and a valid, unused College ID."
+            ? "Signup was rejected by the server. Please check that you used your college email address."
             : "Could not create the account. Please try again."
       );
       return;
     }
 
     // With email confirmation ON, signup returns no session: the student
-    // confirms the email first, then waits for admin approval of the
-    // College ID. Say exactly that instead of pretending we are logged in.
+    // confirms the email first, then waits for an admin to approve the
+    // account. Say exactly that instead of pretending we are logged in.
     if (!data.session || !data.user) {
       setSubmitting(false);
       setNotice(
-        "Account created. Please confirm your email from the link we sent you, then log in — an admin will verify your College ID before your feed unlocks."
+        "Account created. Please confirm your email from the link we sent you, then log in — an admin will review and approve your account before your feed unlocks."
       );
       return;
     }
@@ -146,7 +132,7 @@ export default function SignupPage() {
       title="Create your account"
       subtitle={
         college
-          ? `For ${college.name} students only — your College ID will be verified by an admin.`
+          ? `For ${college.name} students only — sign up with your college email.`
           : "Join Campora with your college details."
       }
     >
@@ -162,21 +148,6 @@ export default function SignupPage() {
             placeholder="e.g. Arvind Kushwaha"
             className={inputClass}
           />
-        </div>
-        <div>
-          <label className={labelClass} htmlFor="signup-college-id">College ID / Enrollment number</label>
-          <input
-            id="signup-college-id"
-            type="text"
-            autoComplete="off"
-            value={collegeId}
-            onChange={(e) => setCollegeId(e.target.value)}
-            placeholder="e.g. 2500331530079"
-            className={inputClass}
-          />
-          <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-            Kept private — other students never see your College ID.
-          </p>
         </div>
         <div>
           <label className={labelClass} htmlFor="signup-email">College email</label>
@@ -243,7 +214,7 @@ export default function SignupPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-lg bg-indigo-600 px-4 py-2.5 text-[15px] font-semibold text-white transition-colors hover:bg-indigo-700 disabled:opacity-60"
+          className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 shadow-sm px-4 py-2.5 text-[15px] font-semibold text-white transition-colors hover:from-indigo-700 hover:to-violet-700 disabled:opacity-60"
         >
           {submitting ? "Creating account..." : "Create account"}
         </button>
