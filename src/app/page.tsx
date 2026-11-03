@@ -67,7 +67,7 @@ function Feed() {
     <div className="flex flex-col gap-5">
       <div>
         <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-indigo-600 dark:text-indigo-400">
-          The campus feed
+          The campus feed · {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
         </p>
         <h1 className="mt-1.5 font-display text-[32px] font-semibold leading-tight tracking-tight text-slate-900 dark:text-slate-50">
           {firstName ? (
