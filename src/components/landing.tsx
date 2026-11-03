@@ -364,8 +364,7 @@ export function Landing() {
             <Link href="/signup" className="transition-colors hover:text-slate-900 dark:hover:text-white">Create account</Link>
           </nav>
           <p className="text-xs leading-relaxed text-slate-400 dark:text-slate-500">
-            Campora — a personal mini project by Arvind Kushwaha, Work in Progress.
-            {college ? ` Made for the students of ${college.name}.` : ""}
+            {`Campora — a personal mini project by Arvind Kushwaha, Work in Progress.${college ? ` Made for the students of ${college.name}.` : ""}`}
           </p>
         </div>
       </footer>
