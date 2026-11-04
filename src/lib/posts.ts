@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import { supabase } from "./supabase";
 import { useAuth } from "./auth";
-import type { Post } from "./constants";
+import type { CommentItem, Post } from "./constants";
 
 /** Columns every post query needs (author details are merged separately). */
 export const POST_COLUMNS = "id, user_id, text, image_url, created_at";
@@ -118,4 +118,41 @@ export function usePostLikes() {
   );
 
   return { likeCounts, myLikes, syncLikes, toggleLike };
+}
+
+/**
+ * Load the comments of one post (oldest first) with author details merged
+ * in, using the same two-query pattern as attachAuthors — no PostgREST
+ * embed, so a join hiccup can never take the whole list down.
+ */
+export async function loadComments(postId: string): Promise<CommentItem[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("comments")
+    .select("id, post_id, user_id, text, created_at")
+    .eq("post_id", postId)
+    .order("created_at", { ascending: true });
+  if (error || !data) return [];
+  const authorIds = [...new Set(data.map((c) => c.user_id))];
+  const { data: authors } = await supabase
+    .from("profiles")
+    .select("id, full_name, avatar_url, is_guest")
+    .in("id", authorIds);
+  const byId = new Map(
+    (authors ?? []).map((a) => [
+      a.id,
+      { full_name: a.full_name, avatar_url: a.avatar_url, is_guest: a.is_guest },
+    ])
+  );
+  return data.map((c) => ({ ...c, profiles: byId.get(c.user_id) ?? null }));
+}
+
+/** Just the number of comments on a post (null when unavailable). */
+export async function countComments(postId: string): Promise<number | null> {
+  if (!supabase) return null;
+  const { count, error } = await supabase
+    .from("comments")
+    .select("id", { count: "exact", head: true })
+    .eq("post_id", postId);
+  return error ? null : (count ?? 0);
 }

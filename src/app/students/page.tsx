@@ -115,6 +115,28 @@ function Discovery() {
         </select>
       </div>
 
+      {!loading && !error && (
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            <span className="font-display text-xl font-semibold text-slate-900 dark:text-slate-50">{others.length}</span>{" "}
+            {others.length === 1 ? "student" : "students"} found
+          </p>
+          {(query || course || year) && (
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("");
+                setCourse("");
+                setYear("");
+              }}
+              className="rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-1.5 text-[13px] font-semibold text-slate-600 dark:text-slate-300 transition-all hover:text-slate-900 dark:hover:text-slate-50 active:scale-95"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+      )}
+
       {loading ? (
         <LoadingScreen label="Loading students" />
       ) : error ? (

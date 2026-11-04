@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
-import type { Post } from "@/lib/constants";
+import { cardClass, type Post } from "@/lib/constants";
 import { POST_COLUMNS, attachAuthors, type PostRow } from "@/lib/posts";
 import { AppShell } from "@/components/shell";
 import { AuthGate, LoadingScreen } from "@/components/common";
@@ -84,6 +84,21 @@ function Moderation() {
           below, or directly in the feed.
         </p>
       </div>
+
+      {!loading && posts.length > 0 && (
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { value: posts.length, label: "Posts in feed" },
+            { value: posts.filter((p) => p.image_url).length, label: "With photos" },
+            { value: new Set(posts.map((p) => p.user_id)).size, label: "Students posting" },
+          ].map((s) => (
+            <div key={s.label} className={`${cardClass} px-3 py-3.5 text-center`}>
+              <p className="font-display text-[26px] font-semibold leading-none text-slate-900 dark:text-slate-50">{s.value}</p>
+              <p className="mt-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {error && (
         <p role="alert" className="rounded-lg bg-red-50 dark:bg-red-400/10 px-3 py-2 text-sm text-red-600">{error}</p>

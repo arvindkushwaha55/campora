@@ -28,20 +28,21 @@ Privacy by design: email addresses are **never** shown to other students — pro
 - **Instant access** — after email confirmation the feed unlocks right away; there is no approval queue.
 - **Guest entry** — teachers and visitors can enter from the login page with just a name (Supabase anonymous sign-ins; no email or password). Guest accounts are flagged `is_guest` and labelled “Guest” on their profile, posts and discovery cards; the session lives on that device.
 - **Profiles** — photo, name, course, year, and a short bio (up to 160 characters). Edit your own details and picture; view other verified students' profiles and their posts.
-- **Campus feed** — text posts (up to 1000 characters) with an optional image, newest first, with author name/photo, course/year and timestamp. Loads in pages of 10 with "Load more". Posts are stored in the database, so they survive refresh and re-login. On wide screens the feed gets a third column: a discovery rail with the college card and the newest verified students. Post cards have a like animation, an options menu for your own posts, and skeleton loading states.
+- **Campus feed** — text posts (up to 1000 characters) with an optional image, newest first, with author name/photo, course/year and timestamp. Loads in pages of 10 with "Load more". Posts are stored in the database, so they survive refresh and re-login. On wide screens the feed gets a third column: a discovery rail with the college card and the newest verified students. Post cards have a like animation, an options menu for your own posts, skeleton loading states, relative timestamps ("5m ago"), a photo lightbox (click a photo to view it full screen), and view filters (All posts / Photos / Text only) over the loaded feed.
 - **Profiles** — ink cover band with a campus-path pattern, verified badge, bio and the student’s posts with working likes.
 - **Auth polish** — password show/hide toggle on login, signup and reset; premium auth cards with an ink brand strip.
 - **Design language (“Editorial Campus”)** — warm ivory surfaces and deep-ink text, electric cobalt as the primary colour and coral as the controlled accent (likes, highlights); Fraunces serif display type for headlines paired with Plus Jakarta Sans for UI; a dotted campus-map background motif, an editorial ticker of real campus phrases on the landing page, and solid colours instead of SaaS-style gradients. The whole palette is centralised as design tokens in `src/app/globals.css`.
 - **Dark theme** — a light/dark toggle (landing page, auth pages, sidebar and mobile top bar). The first visit follows the system preference; the choice is remembered on the device and applied before the page paints, so there is no flash of the wrong theme.
 - **Likes** — like/unlike any post; real counts from the database; the database primary key makes duplicate likes from the same student impossible.
-- **Student discovery** — search verified students by name, filter by course and year.
+- **Comments** — every post has a comment thread (added in migration v7): signed-in students and guests can comment, delete their own comments, and admins can delete any comment (moderation). Comment counts show on the post card; the thread loads when opened.
+- **Student discovery** — search verified students by name, filter by course and year, with a live result count and one-tap filter reset. Profile pages show course/year and joined-date chips. The admin moderation page opens with a small summary (posts in feed, posts with photos, students posting) computed from the real posts.
 - **Delete your own posts** — including their uploaded image.
 - **Admin moderation** (`/admin`) — admins see every post in one list and can delete any post (also possible directly in the feed). Students can still delete only their own posts.
 - **Security** — Row Level Security everywhere: only signed-in, email-confirmed students of the college can read the feed/profiles/likes; students can only edit their own profile and delete their own posts, while admins can delete any post (moderation); the signup trigger enforces the college email domain on every email signup, with or without form metadata (hardened in v6), and a protection trigger stops students from changing their own verification status or admin flag; uploads live in per-user storage folders with matching policies. No service-role key is ever used in the frontend.
 
 ### Not built (out of scope for this version)
 
-Comments, direct messages, follow system, events, reels/video, and real-time updates are intentionally not part of this version.
+Direct messages, follow system, events, reels/video, and real-time updates are intentionally not part of this version.
 
 ## Tech stack
 
@@ -58,7 +59,7 @@ Browser (Next.js static export)
    ▼
 Supabase
    ├── Auth          — accounts, email confirmation, password reset
-   ├── Postgres      — colleges, profiles, posts, likes
+   ├── Postgres      — colleges, profiles, posts, likes, comments
    │     └── RLS + triggers enforce: college domain, confirmed
    │         students only, admin-only moderation
    └── Storage       — avatars, post-images (per-user folders)
@@ -73,6 +74,7 @@ Supabase
 | `student_private` | Legacy from v2: held College IDs when signup collected them. No longer written or read since migration v3; kept only so no stored data was deleted. |
 | `posts` | Post text, optional image URL, author, timestamp. |
 | `likes` | `(post_id, user_id)` pairs — the composite primary key prevents duplicate likes. |
+| `comments` | Comment text (up to 300 characters), post, author, timestamp. Deleting a post or a profile removes its comments automatically. |
 
 ## Getting started
 
@@ -93,11 +95,12 @@ npm install
 5. Run [`supabase/migration_v4.sql`](supabase/migration_v4.sql) the same way. This makes accounts active immediately after email confirmation (no admin approval) and gives admins delete-any-post moderation rights.
 6. Run [`supabase/migration_v5.sql`](supabase/migration_v5.sql) the same way. This adds the `is_guest` flag for guest accounts.
 7. Run [`supabase/migration_v6.sql`](supabase/migration_v6.sql) the same way. This hardens the signup trigger: the college-domain check now runs on **every** email signup (previously it could be skipped by omitting signup metadata), and anonymous accounts are always flagged as guests.
-8. Open **Authentication → Providers → Email** and turn **ON** "Confirm email" (students must confirm their college email). Also open **Authentication → Providers → Anonymous** and turn **ON** anonymous sign-ins, so the guest entry on the login page works.
-8. Open **Authentication → URL Configuration**: set **Site URL** to your site URL (e.g. `https://arvindkushwaha55.github.io/campora/`) and add these **Redirect URLs** so email links land back in the app:
+8. Run [`supabase/migration_v7.sql`](supabase/migration_v7.sql) the same way. This adds the `comments` table with its RLS rules (signed-in users read all comments; users manage their own; admins can delete any comment).
+9. Open **Authentication → Providers → Email** and turn **ON** "Confirm email" (students must confirm their college email). Also open **Authentication → Providers → Anonymous** and turn **ON** anonymous sign-ins, so the guest entry on the login page works.
+10. Open **Authentication → URL Configuration**: set **Site URL** to your site URL (e.g. `https://arvindkushwaha55.github.io/campora/`) and add these **Redirect URLs** so email links land back in the app:
    - `https://arvindkushwaha55.github.io/campora/**`
    - `http://localhost:3000/**` (for local development)
-9. Open **Project Settings → API** and copy the **Project URL** and the **anon/public key**.
+11. Open **Project Settings → API** and copy the **Project URL** and the **anon/public key**.
 
 ### 3. Configure environment variables
 
@@ -170,7 +173,8 @@ campora/
 │   ├── migration_v3.sql   # email-only signup (no College ID) — run third
 │   ├── migration_v4.sql   # instant activation + admin moderation — run fourth
 │   ├── migration_v5.sql   # guest accounts (is_guest flag) — run fifth
-│   └── migration_v6.sql   # signup-trigger hardening: domain check on every email signup — run sixth
+│   ├── migration_v6.sql   # signup-trigger hardening: domain check on every email signup — run sixth
+│   └── migration_v7.sql   # comments on posts — run seventh
 ├── scripts/
 │   └── verify_backend.py  # API checks for the v1 rules (auth/RLS/storage)
 ├── .github/workflows/     # GitHub Pages deployment

@@ -25,6 +25,7 @@ function Feed() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState("");
+  const [filter, setFilter] = useState<"all" | "photos" | "text">("all");
   const pageRef = useRef(0);
 
   const loadPage = useCallback(
@@ -62,12 +63,15 @@ function Feed() {
   }, [reload]);
 
   const firstName = profile?.full_name?.trim().split(" ")[0];
+  const visiblePosts = posts.filter((post) =>
+    filter === "all" ? true : filter === "photos" ? Boolean(post.image_url) : !post.image_url
+  );
 
   return (
     <div className="flex flex-col gap-5">
       <div>
         <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-indigo-600 dark:text-indigo-400">
-          The campus feed
+          The campus feed · {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
         </p>
         <h1 className="mt-1.5 font-display text-[32px] font-semibold leading-tight tracking-tight text-slate-900 dark:text-slate-50">
           {firstName ? (
@@ -85,6 +89,37 @@ function Feed() {
       </div>
 
       <Composer onPosted={reload} />
+
+      {!loading && !error && posts.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1" role="group" aria-label="Filter posts">
+            {(
+              [
+                { id: "all", label: "All posts" },
+                { id: "photos", label: "Photos" },
+                { id: "text", label: "Text only" },
+              ] as const
+            ).map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setFilter(f.id)}
+                aria-pressed={filter === f.id}
+                className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-all active:scale-95 ${
+                  filter === f.id
+                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/25"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-50"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+          <span className="ml-auto text-xs font-medium text-slate-400 dark:text-slate-500">
+            Showing {visiblePosts.length} of {posts.length} loaded posts
+          </span>
+        </div>
+      )}
 
       <section aria-label="Campus feed" className="flex flex-col gap-4">
 
@@ -110,16 +145,29 @@ function Feed() {
           </div>
         ) : (
           <>
-            {posts.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                likeCount={likeCounts[post.id] ?? 0}
-                likedByMe={myLikes.has(post.id)}
-                onToggleLike={toggleLike}
-                onDeleted={(id) => setPosts((prev) => prev.filter((p) => p.id !== id))}
-              />
-            ))}
+            {visiblePosts.length === 0 ? (
+              <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-10 text-center">
+                <p className="font-semibold text-slate-700 dark:text-slate-200">
+                  No {filter === "photos" ? "photo" : "text-only"} posts in the loaded feed
+                </p>
+                <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400">
+                  {hasMore
+                    ? "Load more posts below, or switch back to All posts."
+                    : "Switch back to All posts to see everything."}
+                </p>
+              </div>
+            ) : (
+              visiblePosts.map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  likeCount={likeCounts[post.id] ?? 0}
+                  likedByMe={myLikes.has(post.id)}
+                  onToggleLike={toggleLike}
+                  onDeleted={(id) => setPosts((prev) => prev.filter((p) => p.id !== id))}
+                />
+              ))
+            )}
             {hasMore && (
               <button
                 type="button"

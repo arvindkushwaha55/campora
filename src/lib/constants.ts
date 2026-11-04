@@ -53,7 +53,22 @@ export interface Post {
 export const cardClass =
   "rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)]";
 
+export interface CommentItem {
+  id: string;
+  post_id: string;
+  user_id: string;
+  text: string;
+  created_at: string;
+  // Joined from the profiles table when comments are loaded.
+  profiles: {
+    full_name: string;
+    avatar_url: string | null;
+    is_guest?: boolean;
+  } | null;
+}
+
 export const MAX_POST_LENGTH = 1000;
+export const MAX_COMMENT_LENGTH = 300;
 export const MAX_BIO_LENGTH = 160;
 export const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 export const FEED_PAGE_SIZE = 10;
