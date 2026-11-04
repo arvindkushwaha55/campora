@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import type { College, Profile } from "@/lib/constants";
+import { NAME_ERROR_MESSAGE, containsAbuse } from "@/lib/moderation";
 import { Brand } from "./shell";
 import { CameraIcon, CheckIcon, EyeIcon, EyeOffIcon, ProfileAvatar } from "./icons";
 import { ThemeToggle } from "./theme-toggle";
@@ -340,6 +341,10 @@ export function GuestEntry() {
     const value = name.trim();
     if (value.length < 2) {
       setError("Please enter your name.");
+      return;
+    }
+    if (containsAbuse(value)) {
+      setError(NAME_ERROR_MESSAGE);
       return;
     }
     setBusy(true);
