@@ -9,12 +9,26 @@ import { AppShell } from "@/components/shell";
 import { LoadingScreen, NotConfigured, VerificationScreen } from "@/components/common";
 import { Landing } from "@/components/landing";
 import { Composer, PostCard } from "@/components/feed";
+import { CheckIcon } from "@/components/icons";
 
 function greetingForNow() {
   const hour = new Date().getHours();
   if (hour < 12) return "Good morning";
   if (hour < 17) return "Good afternoon";
   return "Good evening";
+}
+
+/** Editorial day label for feed dividers: "Today", "Yesterday", or the date. */
+function dayLabel(iso: string) {
+  const d = new Date(iso);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+  const sameDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  if (sameDay(d, today)) return "Today";
+  if (sameDay(d, yesterday)) return "Yesterday";
+  return d.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" });
 }
 
 function Feed() {
@@ -26,6 +40,7 @@ function Feed() {
   const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<"all" | "photos" | "text">("all");
+  const [toast, setToast] = useState("");
   const pageRef = useRef(0);
 
   const loadPage = useCallback(
@@ -66,6 +81,16 @@ function Feed() {
   const visiblePosts = posts.filter((post) =>
     filter === "all" ? true : filter === "photos" ? Boolean(post.image_url) : !post.image_url
   );
+  // Group the visible posts under editorial day dividers ("Today", ...).
+  const feedItems: { label: string | null; post: Post }[] = [];
+  {
+    let last = "";
+    for (const post of visiblePosts) {
+      const label = dayLabel(post.created_at);
+      feedItems.push({ label: label !== last ? label : null, post });
+      last = label;
+    }
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -88,7 +113,25 @@ function Feed() {
         </p>
       </div>
 
-      <Composer onPosted={reload} />
+      <Composer
+        onPosted={() => {
+          void reload();
+          setToast("Your post is live in the feed.");
+          window.setTimeout(() => setToast(""), 3400);
+        }}
+      />
+
+      {toast && (
+        <div
+          role="status"
+          className="fixed bottom-24 left-1/2 z-40 flex -translate-x-1/2 animate-[rise_0.3s_ease_both] items-center gap-2 rounded-full bg-slate-900 py-2.5 pl-3.5 pr-5 text-sm font-semibold text-white shadow-2xl dark:bg-white dark:text-slate-900 lg:bottom-8"
+        >
+          <span className="grid h-5 w-5 place-items-center rounded-full bg-emerald-500 text-white dark:text-white">
+            <CheckIcon className="h-3 w-3" />
+          </span>
+          {toast}
+        </div>
+      )}
 
       {!loading && !error && posts.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
@@ -157,15 +200,25 @@ function Feed() {
                 </p>
               </div>
             ) : (
-              visiblePosts.map((post) => (
-                <PostCard
-                  key={post.id}
-                  post={post}
-                  likeCount={likeCounts[post.id] ?? 0}
-                  likedByMe={myLikes.has(post.id)}
-                  onToggleLike={toggleLike}
-                  onDeleted={(id) => setPosts((prev) => prev.filter((p) => p.id !== id))}
-                />
+              feedItems.map(({ label, post }) => (
+                <div key={post.id} className="flex flex-col gap-4">
+                  {label && (
+                    <div className="flex items-center gap-3 pt-1" aria-hidden="true">
+                      <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+                      <span className="font-display text-[15px] font-semibold italic tracking-tight text-slate-700 dark:text-slate-200">
+                        {label}
+                      </span>
+                      <span className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
+                    </div>
+                  )}
+                  <PostCard
+                    post={post}
+                    likeCount={likeCounts[post.id] ?? 0}
+                    likedByMe={myLikes.has(post.id)}
+                    onToggleLike={toggleLike}
+                    onDeleted={(id) => setPosts((prev) => prev.filter((p) => p.id !== id))}
+                  />
+                </div>
               ))
             )}
             {hasMore && (

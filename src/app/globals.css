@@ -217,6 +217,20 @@ body {
   animation: marquee 36s linear infinite;
 }
 
+/* Indeterminate progress slide (composer publishing feedback) */
+@keyframes slide-x {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(320%);
+  }
+}
+
+.animate-slide-x {
+  animation: slide-x 1.1s ease-in-out infinite;
+}
+
 /* Photo reveal on post cards: a soft settle as the image loads in */
 @keyframes reveal {
   from {
