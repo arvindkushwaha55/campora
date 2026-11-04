@@ -158,17 +158,20 @@ function Discovery() {
             <li key={s.id}>
               <Link
                 href={`/profile?id=${s.id}`}
-                className={`flex items-center gap-3.5 ${cardClass} p-4 transition-all hover:-translate-y-0.5 hover:shadow-lg`}
+                className={`group flex items-center gap-3.5 ${cardClass} p-4 transition-all hover:-translate-y-0.5 hover:shadow-lg`}
               >
                 <span className="shrink-0 rounded-full ring-2 ring-pink-100 dark:ring-pink-500/25">
                   <ProfileAvatar name={s.full_name} avatarUrl={s.avatar_url} size="lg" />
                 </span>
-                <span className="min-w-0">
-                  <span className="block truncate font-semibold text-slate-900 dark:text-slate-50">{s.full_name}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-display text-[17px] font-semibold tracking-tight text-slate-900 dark:text-slate-50">{s.full_name}</span>
                   <span className="block text-sm text-slate-500 dark:text-slate-400">
                     {s.is_guest ? "Guest" : `${s.course} · ${s.year} year`}
                   </span>
                   {s.bio && <span className="mt-0.5 block truncate text-sm text-slate-400 dark:text-slate-500">{s.bio}</span>}
+                </span>
+                <span aria-hidden="true" className="shrink-0 text-lg text-indigo-400 opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100">
+                  →
                 </span>
               </Link>
             </li>

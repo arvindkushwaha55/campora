@@ -44,12 +44,12 @@ function ProductPreview() {
         </div>
         <div className="flex flex-col gap-3 bg-slate-50/80 dark:bg-slate-950/40 p-4">
           <div className="flex items-center gap-2.5 rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2.5">
-            <Initials initials="AK" className="h-8 w-8 bg-gradient-to-br from-indigo-500 to-violet-500 text-[11px]" />
+            <Initials initials="AK" className="h-8 w-8 bg-slate-900 text-[11px]" />
             <span className="text-[13px] text-slate-400 dark:text-slate-500">Share something about campus today...</span>
           </div>
           <article className="rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
             <div className="flex items-center gap-2.5">
-              <Initials initials="AK" className="h-9 w-9 bg-gradient-to-br from-indigo-500 to-violet-500 text-xs" />
+              <Initials initials="AK" className="h-9 w-9 bg-slate-900 text-xs" />
               <div className="min-w-0">
                 <p className="truncate text-[13px] font-semibold text-slate-900 dark:text-slate-50">Arvind Kushwaha</p>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">B.Tech · 2nd year</p>
@@ -187,9 +187,9 @@ export function Landing() {
             </div>
             <div className="mt-9 flex items-center justify-center gap-3 lg:justify-start">
               <span className="flex -space-x-2.5">
-                <Initials initials="PS" className="h-9 w-9 bg-gradient-to-br from-pink-500 to-rose-500 text-[11px] ring-2 ring-white dark:ring-slate-950" />
-                <Initials initials="RV" className="h-9 w-9 bg-gradient-to-br from-sky-500 to-indigo-500 text-[11px] ring-2 ring-white dark:ring-slate-950" />
-                <Initials initials="AK" className="h-9 w-9 bg-gradient-to-br from-indigo-500 to-violet-500 text-[11px] ring-2 ring-white dark:ring-slate-950" />
+                <Initials initials="PS" className="h-9 w-9 bg-rose-500 text-[11px] ring-2 ring-white dark:ring-slate-950" />
+                <Initials initials="RV" className="h-9 w-9 bg-indigo-500 text-[11px] ring-2 ring-white dark:ring-slate-950" />
+                <Initials initials="AK" className="h-9 w-9 bg-slate-900 text-[11px] ring-2 ring-white dark:ring-slate-950" />
               </span>
               <p className="text-left text-[13px] leading-snug text-slate-500 dark:text-slate-400">
                 Made for your classmates.
@@ -235,7 +235,7 @@ export function Landing() {
           </h2>
           <div className="mt-9 grid gap-4 sm:grid-cols-3">
             <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)] transition-all hover:-translate-y-1 hover:shadow-xl">
-              <span className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-md shadow-emerald-500/25">
+              <span className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-500 text-white shadow-md shadow-emerald-500/25">
                 <CheckIcon className="h-5 w-5" />
               </span>
               <h3 className="mt-4 font-bold text-slate-900 dark:text-slate-50">Verified students only</h3>
@@ -246,7 +246,7 @@ export function Landing() {
               </p>
             </div>
             <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)] transition-all hover:-translate-y-1 hover:shadow-xl">
-              <span className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-500/25">
+              <span className="grid h-11 w-11 place-items-center rounded-2xl bg-indigo-600 text-white shadow-md shadow-indigo-500/25">
                 <HomeIcon className="h-5 w-5" />
               </span>
               <h3 className="mt-4 font-bold text-slate-900 dark:text-slate-50">One campus feed</h3>
@@ -256,7 +256,7 @@ export function Landing() {
               </p>
             </div>
             <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)] transition-all hover:-translate-y-1 hover:shadow-xl">
-              <span className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 text-white shadow-md shadow-pink-500/25">
+              <span className="grid h-11 w-11 place-items-center rounded-2xl bg-rose-500 text-white shadow-md shadow-rose-500/25">
                 <SearchIcon className="h-5 w-5" />
               </span>
               <h3 className="mt-4 font-bold text-slate-900 dark:text-slate-50">Find your people</h3>
@@ -311,7 +311,7 @@ export function Landing() {
                 key={s.n}
                 className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)]"
               >
-                <span className="bg-gradient-to-br from-indigo-600 to-violet-600 bg-clip-text text-4xl font-extrabold text-transparent">
+                <span className="font-display text-4xl font-semibold italic text-indigo-600 dark:text-indigo-400">
                   {s.n}
                 </span>
                 <h3 className="mt-2.5 font-bold text-slate-900 dark:text-slate-50">{s.t}</h3>
