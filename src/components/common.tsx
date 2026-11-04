@@ -372,7 +372,7 @@ export function GuestEntry() {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Neha Tomar"
+            placeholder="e.g. Visiting Teacher"
             className={inputClass}
             autoComplete="name"
           />
