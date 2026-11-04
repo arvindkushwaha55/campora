@@ -20,6 +20,30 @@ import { POST_COLUMNS, attachAuthors, usePostLikes, type PostRow } from "@/lib/p
 import { PostCard } from "@/components/feed";
 import { ProfileAvatar } from "@/components/icons";
 
+function ProfileMetaChips({ profile }: { profile: Profile }) {
+  const joined = new Date(profile.created_at).toLocaleDateString("en-IN", {
+    month: "short",
+    year: "numeric",
+  });
+  const chips = [
+    profile.is_guest ? "Guest account" : `${profile.course} · ${profile.year} year`,
+    `Joined ${joined}`,
+    ...(profile.is_admin ? ["Admin"] : []),
+  ];
+  return (
+    <div className="mt-3 flex flex-wrap gap-1.5">
+      {chips.map((chip) => (
+        <span
+          key={chip}
+          className="rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-2.5 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300"
+        >
+          {chip}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function PostsList({ userId }: { userId: string }) {
   const [posts, setPosts] = useState<Post[]>([]);
   const { likeCounts, myLikes, syncLikes, toggleLike } = usePostLikes();
@@ -122,6 +146,7 @@ function OtherProfile({ id }: { id: string }) {
               ✓ Verified student
             </span>
           )}
+          <ProfileMetaChips profile={profile} />
           {profile.bio && (
             <p className="mt-2.5 text-[15px] leading-relaxed text-slate-600 dark:text-slate-300">{profile.bio}</p>
           )}
@@ -258,6 +283,7 @@ function MyProfile() {
                     : "Verification pending"}
               {profile.is_admin ? " · Admin" : ""}
             </span>
+            <ProfileMetaChips profile={profile} />
             {profile.bio && (
               <p className="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{profile.bio}</p>
             )}
