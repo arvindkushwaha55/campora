@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
+import { ABUSE_ERROR_MESSAGE, NAME_ERROR_MESSAGE, NSFW_ERROR_MESSAGE, containsAbuse } from "@/lib/moderation";
+import { imageLooksInappropriate } from "@/lib/image-moderation";
 import {
   COURSES,
   MAX_BIO_LENGTH,
@@ -186,7 +188,7 @@ function MyProfile() {
     setEditing(true);
   }
 
-  function pickAvatar(file: File | null) {
+  async function pickAvatar(file: File | null) {
     setError("");
     if (!file) {
       setAvatar(null);
@@ -201,6 +203,11 @@ function MyProfile() {
       setError("Profile picture is too large — please keep it under 5 MB.");
       return;
     }
+    // Same on-device screening as post photos.
+    if (await imageLooksInappropriate(file)) {
+      setError(NSFW_ERROR_MESSAGE);
+      return;
+    }
     setAvatar(file);
     setAvatarPreview(URL.createObjectURL(file));
   }
@@ -213,6 +220,14 @@ function MyProfile() {
     const name = fullName.trim();
     if (name.length < 2) {
       setError("Please enter your full name.");
+      return;
+    }
+    if (containsAbuse(name)) {
+      setError(NAME_ERROR_MESSAGE);
+      return;
+    }
+    if (containsAbuse(bio)) {
+      setError(ABUSE_ERROR_MESSAGE);
       return;
     }
     setSaving(true);
@@ -233,7 +248,13 @@ function MyProfile() {
         .from("profiles")
         .update({ full_name: name, course, year, bio: bio.trim() || null, avatar_url: avatarUrl })
         .eq("id", user.id);
-      if (updateError) throw new Error("Could not save your profile. Please try again.");
+      if (updateError) {
+        throw new Error(
+          updateError.message.includes("abusive")
+            ? ABUSE_ERROR_MESSAGE
+            : "Could not save your profile. Please try again.",
+        );
+      }
       await refreshProfile();
       setEditing(false);
       setSaved(true);

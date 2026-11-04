@@ -7,6 +7,8 @@ import { isSupabaseConfigured, siteUrl, supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { COURSES, MAX_IMAGE_SIZE_BYTES, YEARS } from "@/lib/constants";
 import { AuthCard, NotConfigured, PasswordInput, ProfileAvatarInput, inputClass, labelClass, useCollege } from "@/components/common";
+import { NAME_ERROR_MESSAGE, NSFW_ERROR_MESSAGE, containsAbuse } from "@/lib/moderation";
+import { imageLooksInappropriate } from "@/lib/image-moderation";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -29,7 +31,7 @@ export default function SignupPage() {
 
   if (!isSupabaseConfigured) return <NotConfigured />;
 
-  function pickAvatar(file: File | null) {
+  async function pickAvatar(file: File | null) {
     setError("");
     if (!file) {
       setAvatar(null);
@@ -42,6 +44,11 @@ export default function SignupPage() {
     }
     if (file.size > MAX_IMAGE_SIZE_BYTES) {
       setError("Profile picture is too large — please keep it under 5 MB.");
+      return;
+    }
+    // Same on-device screening as post photos.
+    if (await imageLooksInappropriate(file)) {
+      setError(NSFW_ERROR_MESSAGE);
       return;
     }
     setAvatar(file);
@@ -57,6 +64,10 @@ export default function SignupPage() {
     const name = fullName.trim();
     if (name.length < 2) {
       setError("Please enter your full name.");
+      return;
+    }
+    if (containsAbuse(name)) {
+      setError(NAME_ERROR_MESSAGE);
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
