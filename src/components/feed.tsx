@@ -44,6 +44,8 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
   const [preview, setPreview] = useState<string>("");
   const [error, setError] = useState("");
   const [posting, setPosting] = useState(false);
+  const [stage, setStage] = useState<"uploading" | "publishing" | null>(null);
+  const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Release the object URL of the previous preview whenever it is replaced
@@ -84,6 +86,7 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
       return;
     }
     setPosting(true);
+    setStage(image ? "uploading" : "publishing");
     setError("");
     try {
       let imageUrl: string | null = null;
@@ -96,6 +99,7 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
         if (uploadError) throw new Error("Image upload failed. Please try again.");
         imageUrl = supabase.storage.from("post-images").getPublicUrl(path).data.publicUrl;
       }
+      setStage("publishing");
       const { error: insertError } = await supabase
         .from("posts")
         .insert({ user_id: user.id, text: value, image_url: imageUrl });
@@ -108,13 +112,24 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
       setError(e instanceof Error ? e.message : "Something went wrong.");
     } finally {
       setPosting(false);
+      setStage(null);
     }
   }
 
   return (
     <section
-      className={`${cardClass} p-5 transition-shadow focus-within:ring-2 focus-within:ring-indigo-100 dark:focus-within:ring-indigo-500/20`}
+      className={`${cardClass} p-5 transition-shadow focus-within:ring-2 focus-within:ring-indigo-100 dark:focus-within:ring-indigo-500/20 ${dragging ? "ring-2 ring-indigo-400 dark:ring-indigo-500/60" : ""}`}
       aria-label="Create a post"
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDragging(true);
+      }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragging(false);
+        pickImage(e.dataTransfer.files?.[0] ?? null);
+      }}
     >
       <div className="flex gap-3">
         {profile && (
@@ -125,6 +140,13 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
+          onPaste={(e) => {
+            const item = [...e.clipboardData.items].find((i) => i.type.startsWith("image/"));
+            if (item) {
+              e.preventDefault();
+              pickImage(item.getAsFile());
+            }
+          }}
           rows={3}
           maxLength={MAX_POST_LENGTH + 50}
           placeholder="Share something about campus today..."
@@ -176,6 +198,20 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
           {posting ? "Posting..." : "Post"}
         </button>
       </div>
+      {posting ? (
+        <div className="mt-3 flex items-center gap-3 pl-[52px]" role="status">
+          <div className="h-1 flex-1 overflow-hidden rounded-full bg-indigo-100 dark:bg-indigo-500/20">
+            <div className="animate-slide-x h-full w-1/3 rounded-full bg-indigo-500" />
+          </div>
+          <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">
+            {stage === "uploading" ? "Uploading photo..." : "Publishing..."}
+          </span>
+        </div>
+      ) : dragging ? (
+        <p className="mt-3 pl-[52px] text-sm font-semibold text-indigo-600 dark:text-indigo-400">
+          Drop the photo to attach it
+        </p>
+      ) : null}
       {error && (
         <p role="alert" className="mt-2.5 pl-[52px] text-sm text-red-600">
           {error}

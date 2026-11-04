@@ -43,7 +43,10 @@ export function Sidebar() {
   return (
     <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-slate-200/80 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 px-4 py-5 backdrop-blur lg:flex">
       <Brand />
-      <nav className="mt-8 flex flex-col gap-1" aria-label="Main">
+      <p className="mt-8 px-3.5 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+        Menu
+      </p>
+      <nav className="mt-2 flex flex-col gap-1" aria-label="Main">
         <Link href="/" className={navClass(pathname === "/")} aria-current={pathname === "/" ? "page" : undefined}>
           <HomeIcon className="h-5 w-5" /> Home
         </Link>

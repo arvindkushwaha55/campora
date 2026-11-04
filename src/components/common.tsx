@@ -6,7 +6,7 @@ import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import type { College, Profile } from "@/lib/constants";
 import { Brand } from "./shell";
-import { CameraIcon, EyeIcon, EyeOffIcon, ProfileAvatar } from "./icons";
+import { CameraIcon, CheckIcon, EyeIcon, EyeOffIcon, ProfileAvatar } from "./icons";
 import { ThemeToggle } from "./theme-toggle";
 
 /** Loads the configured college (name + approved email domain), if any. */
@@ -185,15 +185,48 @@ export function AuthCard({
       <div className="absolute right-4 top-4">
         <ThemeToggle />
       </div>
-      <div className="w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_24px_48px_-16px_rgba(15,23,42,0.22)]">
+      <div className="w-full max-w-md animate-[rise_0.4s_ease_both] overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_24px_48px_-16px_rgba(15,23,42,0.22)] lg:max-w-4xl">
         <div className="h-1.5 bg-slate-900 dark:bg-slate-50" aria-hidden="true" />
-        <div className="p-6 sm:p-8">
-          <div className="flex justify-center">
-            <Brand />
+        <div className="lg:grid lg:grid-cols-[0.92fr_1.08fr]">
+          {/* Editorial panel — desktop only: the ink campus band with the
+              brand statement, so auth feels like part of the product. */}
+          <div className="band-ink relative hidden flex-col justify-between overflow-hidden p-8 text-white lg:flex">
+            <span className="flex items-center gap-2.5">
+              <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-white font-display text-xl font-black italic text-slate-900">
+                C
+              </span>
+              <span className="font-display text-[21px] font-bold tracking-tight">
+                Campora<span className="text-rose-400">.</span>
+              </span>
+            </span>
+            <div className="relative mt-10">
+              <p className="font-display text-[34px] font-semibold leading-[1.12] tracking-tight">
+                Your campus,
+                <br />
+                <span className="italic text-rose-300">connected.</span>
+              </p>
+              <p className="mt-3 max-w-xs text-sm leading-relaxed text-white/75">
+                One feed for the students of your college — campus moments,
+                updates and photographs, shared only with your own campus.
+              </p>
+            </div>
+            <div className="relative mt-10">
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/50">
+                Canteen chronicles ✦ Match days ✦ E-Block mornings
+              </p>
+              <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/90">
+                <CheckIcon className="h-3.5 w-3.5" /> College email only — no outsiders
+              </p>
+            </div>
           </div>
-          <h1 className="mt-5 text-center font-display text-[26px] font-semibold tracking-tight text-slate-900 dark:text-slate-50">{title}</h1>
-          <p className="mt-1 text-center text-sm leading-relaxed text-slate-500 dark:text-slate-400">{subtitle}</p>
-          <div className="mt-6">{children}</div>
+          <div className="p-6 sm:p-8">
+            <div className="flex justify-center lg:hidden">
+              <Brand />
+            </div>
+            <h1 className="mt-5 text-center font-display text-[26px] font-semibold tracking-tight text-slate-900 dark:text-slate-50 lg:mt-1 lg:text-left">{title}</h1>
+            <p className="mt-1 text-center text-sm leading-relaxed text-slate-500 dark:text-slate-400 lg:text-left">{subtitle}</p>
+            <div className="mt-6">{children}</div>
+          </div>
         </div>
       </div>
       <p className="mt-4 text-center text-xs text-slate-400 dark:text-slate-500">
