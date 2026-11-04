@@ -71,16 +71,26 @@ function loadImageElement(url: string): Promise<HTMLImageElement> {
   });
 }
 
+const SCREEN_TIMEOUT_MS = 15_000;
+
 /** True when the photo looks inappropriate for a campus feed. */
 export async function imageLooksInappropriate(file: File): Promise<boolean> {
   const url = URL.createObjectURL(file);
   try {
-    const model = await loadModel();
-    const img = await loadImageElement(url);
-    const predictions = await model.classify(img);
-    const score = (name: string) =>
-      predictions.find((p) => p.className === name)?.probability ?? 0;
-    return score("Porn") >= 0.5 || score("Hentai") >= 0.5 || score("Sexy") >= 0.85;
+    const screening = (async () => {
+      const model = await loadModel();
+      const img = await loadImageElement(url);
+      const predictions = await model.classify(img);
+      const score = (name: string) =>
+        predictions.find((p) => p.className === name)?.probability ?? 0;
+      return score("Porn") >= 0.5 || score("Hentai") >= 0.5 || score("Sexy") >= 0.85;
+    })();
+    // Never let a slow model or network hang the composer: if the check
+    // does not finish in time, allow the photo (fail open, as below).
+    const timeout = new Promise<boolean>((resolve) =>
+      setTimeout(() => resolve(false), SCREEN_TIMEOUT_MS),
+    );
+    return await Promise.race([screening, timeout]);
   } catch {
     // Screening unavailable — allow the photo (admin moderation is the
     // safety net) rather than blocking every photo on a network hiccup.
