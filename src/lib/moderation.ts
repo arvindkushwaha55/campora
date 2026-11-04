@@ -84,5 +84,8 @@ export function containsAbuse(raw: string): boolean {
 export const ABUSE_ERROR_MESSAGE =
   "This contains abusive language, which is not allowed on Campora. Please rephrase and try again.";
 
+export const NAME_ERROR_MESSAGE =
+  "This name contains abusive language, which is not allowed on Campora. Please use a different name.";
+
 export const NSFW_ERROR_MESSAGE =
   "This photo looks inappropriate for a campus feed, so it was not attached. Please choose a different photo.";
