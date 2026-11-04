@@ -556,6 +556,12 @@ export function PostCard({
                     <SendIcon className="h-4 w-4" />
                   </button>
                 </div>
+                <p className="mt-1.5 flex items-center justify-between text-[11px] font-medium text-slate-400 dark:text-slate-500">
+                  <span>Press Enter to send</span>
+                  <span>
+                    {draft.length}/{MAX_COMMENT_LENGTH}
+                  </span>
+                </p>
                 {commentError && (
                   <p role="alert" className="mt-1.5 text-[13px] text-red-600">
                     {commentError}
