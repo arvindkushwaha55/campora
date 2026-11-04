@@ -6,6 +6,8 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { MAX_COMMENT_LENGTH, MAX_IMAGE_SIZE_BYTES, MAX_POST_LENGTH, cardClass, type CommentItem, type Post } from "@/lib/constants";
 import { countComments, loadComments } from "@/lib/posts";
+import { ABUSE_ERROR_MESSAGE, NSFW_ERROR_MESSAGE, containsAbuse } from "@/lib/moderation";
+import { imageLooksInappropriate } from "@/lib/image-moderation";
 import { CommentIcon, DotsIcon, HeartIcon, ImageIcon, ProfileAvatar, SendIcon, TrashIcon, XIcon } from "./icons";
 
 export function formatDateTime(iso: string) {
@@ -44,6 +46,7 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
   const [preview, setPreview] = useState<string>("");
   const [error, setError] = useState("");
   const [posting, setPosting] = useState(false);
+  const [checkingImage, setCheckingImage] = useState(false);
   const [stage, setStage] = useState<"uploading" | "publishing" | null>(null);
   const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -55,7 +58,7 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
     return () => URL.revokeObjectURL(preview);
   }, [preview]);
 
-  function pickImage(file: File | null) {
+  async function pickImage(file: File | null) {
     setError("");
     if (!file) {
       setImage(null);
@@ -68,6 +71,17 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
     }
     if (file.size > MAX_IMAGE_SIZE_BYTES) {
       setError("Image is too large — please keep it under 5 MB.");
+      return;
+    }
+    // Screen the photo on-device before it is attached or uploaded.
+    setCheckingImage(true);
+    const inappropriate = await imageLooksInappropriate(file);
+    setCheckingImage(false);
+    if (inappropriate) {
+      setImage(null);
+      setPreview("");
+      if (fileRef.current) fileRef.current.value = "";
+      setError(NSFW_ERROR_MESSAGE);
       return;
     }
     setImage(file);
@@ -83,6 +97,10 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
     }
     if (value.length > MAX_POST_LENGTH) {
       setError(`Posts are limited to ${MAX_POST_LENGTH} characters.`);
+      return;
+    }
+    if (containsAbuse(value)) {
+      setError(ABUSE_ERROR_MESSAGE);
       return;
     }
     setPosting(true);
@@ -103,7 +121,13 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
       const { error: insertError } = await supabase
         .from("posts")
         .insert({ user_id: user.id, text: value, image_url: imageUrl });
-      if (insertError) throw new Error("Could not publish the post. Please try again.");
+      if (insertError) {
+        throw new Error(
+          insertError.message.includes("abusive")
+            ? ABUSE_ERROR_MESSAGE
+            : "Could not publish the post. Please try again.",
+        );
+      }
       setText("");
       pickImage(null);
       if (fileRef.current) fileRef.current.value = "";
@@ -191,7 +215,7 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
         <button
           type="button"
           onClick={submit}
-          disabled={posting || text.trim().length === 0}
+          disabled={posting || checkingImage || text.trim().length === 0}
           className="flex items-center gap-1.5 rounded-full bg-indigo-600 px-6 py-2 text-sm font-semibold text-white shadow-md shadow-indigo-600/25 transition-all hover:bg-indigo-700 active:scale-95 disabled:opacity-50"
         >
           {!posting && <SendIcon className="h-4 w-4" />}
@@ -207,6 +231,10 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
             {stage === "uploading" ? "Uploading photo..." : "Publishing..."}
           </span>
         </div>
+      ) : checkingImage ? (
+        <p className="mt-3 pl-[52px] text-sm font-semibold text-indigo-600 dark:text-indigo-400" role="status">
+          Checking photo...
+        </p>
       ) : dragging ? (
         <p className="mt-3 pl-[52px] text-sm font-semibold text-indigo-600 dark:text-indigo-400">
           Drop the photo to attach it
@@ -306,6 +334,10 @@ export function PostCard({
       setCommentError(`Comments are limited to ${MAX_COMMENT_LENGTH} characters.`);
       return;
     }
+    if (containsAbuse(value)) {
+      setCommentError(ABUSE_ERROR_MESSAGE);
+      return;
+    }
     setPostingComment(true);
     setCommentError("");
     const { data, error: insertError } = await supabase
@@ -315,7 +347,11 @@ export function PostCard({
       .single();
     setPostingComment(false);
     if (insertError || !data) {
-      setCommentError("Could not post the comment. Please try again.");
+      setCommentError(
+        insertError?.message.includes("abusive")
+          ? ABUSE_ERROR_MESSAGE
+          : "Could not post the comment. Please try again.",
+      );
       return;
     }
     setComments((prev) => [
