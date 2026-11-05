@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useCollege } from "./common";
 import { Brand } from "./shell";
@@ -10,6 +11,37 @@ import { ThemeToggle } from "./theme-toggle";
 // bucket (the same photos students see on the live feed).
 const PHOTO_BASE =
   "https://lxkksfpqxmuqynucoguz.supabase.co/storage/v1/object/public/post-images";
+
+/**
+ * Scroll reveal: wraps a landing section block and settles it in the
+ * first time it enters the viewport (see .reveal in globals.css).
+ */
+function Reveal({ children, className = "" }: { children: ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisible(true);
+          io.disconnect();
+        }
+      },
+      { threshold: 0.1 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} className={`${className} reveal ${visible ? "reveal-visible" : ""}`}>
+      {children}
+    </div>
+  );
+}
 
 function Initials({ initials, className = "" }: { initials: string; className?: string }) {
   return (
@@ -158,34 +190,34 @@ export function Landing() {
         <section className="grid items-center gap-12 pb-8 pt-12 sm:pt-16 lg:grid-cols-[1.02fr_1fr]">
           <div className="text-center lg:text-left">
             {college && (
-              <span className="inline-block rounded-full bg-indigo-50 dark:bg-indigo-400/10 px-3.5 py-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-100 dark:ring-indigo-400/20">
+              <span className="animate-rise inline-block rounded-full bg-indigo-50 dark:bg-indigo-400/10 px-3.5 py-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-100 dark:ring-indigo-400/20">
                 Exclusively for students of {college.name}
               </span>
             )}
-            <h1 className="mt-6 font-display text-[54px] font-semibold leading-[0.98] tracking-tight text-slate-900 dark:text-slate-50 sm:text-7xl lg:text-[88px]">
+            <h1 className="animate-rise mt-6 font-display text-[54px] font-semibold leading-[0.98] tracking-tight text-slate-900 dark:text-slate-50 sm:text-7xl lg:text-[88px]" style={{ animationDelay: "80ms" }}>
               Your campus,
               <span className="block italic text-indigo-600 dark:text-indigo-400">connected.</span>
             </h1>
-            <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-slate-500 dark:text-slate-400 sm:text-lg lg:mx-0">
+            <p className="animate-rise mx-auto mt-5 max-w-xl text-base leading-relaxed text-slate-500 dark:text-slate-400 sm:text-lg lg:mx-0" style={{ animationDelay: "160ms" }}>
               Campora is a private social space for your college — share campus
               updates and photos, find your classmates, and stay in the loop.
               Only verified students get in.
             </p>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+            <div className="animate-rise mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start" style={{ animationDelay: "240ms" }}>
               <Link
                 href="/signup"
-                className="rounded-full bg-indigo-600 px-7 py-3.5 text-[15px] font-semibold text-white shadow-lg shadow-indigo-600/30 transition-all hover:bg-indigo-700 active:scale-95"
+                className="rounded-full bg-indigo-600 px-7 py-3.5 text-[15px] font-semibold text-white shadow-lg shadow-indigo-600/30 transition-all hover:-translate-y-0.5 hover:bg-indigo-700 active:scale-95"
               >
                 Create your account
               </Link>
               <Link
                 href="/login"
-                className="rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-7 py-3.5 text-[15px] font-semibold text-slate-700 dark:text-slate-200 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
+                className="rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-7 py-3.5 text-[15px] font-semibold text-slate-700 dark:text-slate-200 transition-all hover:-translate-y-0.5 hover:bg-slate-50 dark:hover:bg-slate-800"
               >
                 I already have an account
               </Link>
             </div>
-            <div className="mt-9 flex items-center justify-center gap-3 lg:justify-start">
+            <div className="animate-rise mt-9 flex items-center justify-center gap-3 lg:justify-start" style={{ animationDelay: "320ms" }}>
               <span className="flex -space-x-2.5">
                 <Initials initials="PS" className="h-9 w-9 bg-rose-500 text-[11px] ring-2 ring-white dark:ring-slate-950" />
                 <Initials initials="RV" className="h-9 w-9 bg-indigo-500 text-[11px] ring-2 ring-white dark:ring-slate-950" />
@@ -197,13 +229,15 @@ export function Landing() {
               </p>
             </div>
           </div>
-          <ProductPreview />
+          <div className="animate-rise" style={{ animationDelay: "200ms" }}>
+            <ProductPreview />
+          </div>
         </section>
 
         {/* Editorial ticker: real moments from the campus feed, nothing invented. */}
         <div
           aria-hidden="true"
-          className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden border-y border-slate-900 bg-slate-900 py-3.5 dark:border-slate-700"
+          className="ticker-fade relative left-1/2 w-screen -translate-x-1/2 overflow-hidden border-y border-slate-900 bg-slate-900 py-3.5 dark:border-slate-700"
         >
           <div className="animate-marquee flex w-max">
             {[0, 1].map((copy) => (
@@ -233,7 +267,7 @@ export function Landing() {
           <h2 className="mt-2 text-center font-display text-4xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
             Built for one campus community
           </h2>
-          <div className="mt-9 grid gap-4 sm:grid-cols-3">
+          <Reveal className="mt-9 grid gap-4 sm:grid-cols-3">
             <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.18)] transition-all hover:-translate-y-1 hover:shadow-xl">
               <span className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-500 text-white shadow-md shadow-emerald-500/25">
                 <CheckIcon className="h-5 w-5" />
@@ -265,7 +299,7 @@ export function Landing() {
                 classmates across the campus.
               </p>
             </div>
-          </div>
+          </Reveal>
         </section>
 
         <section id="campus" className="scroll-mt-24 pt-16">
@@ -275,7 +309,7 @@ export function Landing() {
           <h2 className="mt-2 text-center font-display text-4xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
             Moments from around RKGIT
           </h2>
-          <div className="mt-9 grid gap-4 sm:grid-cols-3">
+          <Reveal className="mt-9 grid gap-4 sm:grid-cols-3">
             {[
               { img: "canteen.png", alt: "Lunch thali at the college canteen", caption: "Canteen chronicles" },
               { img: "stadium.png", alt: "The college football ground and stands", caption: "Match days at the ground" },
@@ -294,14 +328,17 @@ export function Landing() {
                 </figcaption>
               </figure>
             ))}
-          </div>
+          </Reveal>
         </section>
 
         <section id="how" className="scroll-mt-24 pt-16">
-          <h2 className="text-center font-display text-4xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
+          <p className="text-center text-xs font-extrabold uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-400">
+            Join in minutes
+          </p>
+          <h2 className="mt-2 text-center font-display text-4xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
             How joining works
           </h2>
-          <div className="mx-auto mt-9 grid max-w-4xl gap-4 sm:grid-cols-3">
+          <Reveal className="mx-auto mt-9 grid max-w-4xl gap-4 sm:grid-cols-3">
             {[
               { n: "1", t: "Sign up", d: "Use your college email, course and year." },
               { n: "2", t: "Get verified", d: "Confirm your email from the link we send you." },
@@ -318,11 +355,11 @@ export function Landing() {
                 <p className="mt-1 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{s.d}</p>
               </div>
             ))}
-          </div>
+          </Reveal>
         </section>
 
         <section className="pb-20 pt-16">
-          <div className="band-ink relative overflow-hidden rounded-[32px] px-6 py-12 text-center shadow-xl sm:px-12">
+          <Reveal className="band-ink relative overflow-hidden rounded-[32px] px-6 py-12 text-center shadow-xl sm:px-12">
             <div
               aria-hidden="true"
               className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/15 blur-2xl"
@@ -340,7 +377,7 @@ export function Landing() {
             </p>
             <Link
               href="/signup"
-              className="relative mt-7 inline-block rounded-full bg-white px-8 py-3.5 text-[15px] font-bold text-indigo-700 shadow-lg transition-all hover:bg-indigo-50 active:scale-95"
+              className="relative mt-7 inline-block rounded-full bg-white px-8 py-3.5 text-[15px] font-bold text-indigo-700 shadow-lg transition-all hover:-translate-y-0.5 hover:bg-indigo-50 active:scale-95"
             >
               Create your account
             </Link>
@@ -349,7 +386,7 @@ export function Landing() {
                 Only @{college.email_domain} college emails can join.
               </p>
             )}
-          </div>
+          </Reveal>
         </section>
       </main>
 
