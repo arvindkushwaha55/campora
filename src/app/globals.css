@@ -217,6 +217,39 @@ body {
   animation: marquee 36s linear infinite;
 }
 
+/* The ticker politely pauses when a visitor hovers to read it */
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Soft fade at both edges of the full-width ticker band */
+.ticker-fade {
+  mask-image: linear-gradient(to right, transparent, black 4%, black 96%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 4%, black 96%, transparent);
+}
+
+/* One-shot entrance used for hero elements (staggered via inline delay) */
+.animate-rise {
+  animation: rise 0.6s ease both;
+}
+
+/* Scroll reveal for landing sections: content settles in as it enters
+   the viewport (driven by a tiny IntersectionObserver in landing.tsx).
+   Only applies when the user has not asked for reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal {
+    opacity: 0;
+    transform: translateY(16px);
+    transition:
+      opacity 0.65s ease,
+      transform 0.65s ease;
+  }
+  .reveal-visible {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* Indeterminate progress slide (composer publishing feedback) */
 @keyframes slide-x {
   from {
@@ -284,11 +317,20 @@ body {
 /* Gentle entrance + lift on cards when hovered */
 article {
   animation: rise 0.35s ease both;
-  transition: box-shadow 0.2s ease;
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
 article:hover {
   box-shadow: 0 8px 24px rgba(28, 25, 23, 0.1);
+}
+
+/* A whisper of lift on precise-pointer devices only (never on touch) */
+@media (hover: hover) {
+  article:hover {
+    transform: translateY(-2px);
+  }
 }
 
 .dark article:hover {
