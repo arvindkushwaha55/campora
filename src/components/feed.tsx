@@ -49,6 +49,7 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
   const [checkingImage, setCheckingImage] = useState(false);
   const [stage, setStage] = useState<"uploading" | "publishing" | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [draftReady, setDraftReady] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Release the object URL of the previous preview whenever it is replaced
@@ -57,6 +58,30 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
     if (!preview) return;
     return () => URL.revokeObjectURL(preview);
   }, [preview]);
+
+  // Restore an unsent draft from this device only. Drafts are keyed by
+  // user, never sent anywhere, and disappear as soon as the post is sent.
+  useEffect(() => {
+    if (!user) return;
+    try {
+      const saved = window.localStorage.getItem(`campora:composer-draft:${user.id}`);
+      if (saved) setText(saved);
+    } catch {
+      // Private browsing and storage errors should never break posting.
+    }
+    setDraftReady(true);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user || !draftReady) return;
+    const key = `campora:composer-draft:${user.id}`;
+    try {
+      if (text.trim()) window.localStorage.setItem(key, text);
+      else window.localStorage.removeItem(key);
+    } catch {
+      // Ignore storage failures; the composer still works normally.
+    }
+  }, [draftReady, text, user]);
 
   async function pickImage(file: File | null) {
     setError("");
@@ -164,6 +189,12 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+              e.preventDefault();
+              void submit();
+            }
+          }}
           onPaste={(e) => {
             const item = [...e.clipboardData.items].find((i) => i.type.startsWith("image/"));
             if (item) {
@@ -211,6 +242,7 @@ export function Composer({ onPosted }: { onPosted: () => void }) {
         />
         <span className="ml-auto text-xs text-slate-400 dark:text-slate-500">
           {text.length}/{MAX_POST_LENGTH}
+          <span className="hidden sm:inline"> · Ctrl/Cmd + Enter to post</span>
         </span>
         <button
           type="button"
