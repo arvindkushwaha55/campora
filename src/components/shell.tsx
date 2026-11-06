@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { cardClass, type College, type Profile } from "@/lib/constants";
-import { CheckIcon, HomeIcon, LogOutIcon, ProfileAvatar, SearchIcon, ShieldIcon, SparkleIcon, UserIcon } from "./icons";
+import { ArrowUpIcon, CheckIcon, HomeIcon, LogOutIcon, ProfileAvatar, SearchIcon, ShieldIcon, SparkleIcon, UserIcon } from "./icons";
 import { ThemeToggle } from "./theme-toggle";
 
 export function Brand() {
@@ -276,24 +276,60 @@ export function RightRail() {
   );
 }
 
+function BackToTop() {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    function onScroll() {
+      setVisible(window.scrollY > 600);
+    }
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  if (!visible) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      className="fixed bottom-24 right-4 z-30 grid h-11 w-11 place-items-center rounded-full bg-slate-900 text-white shadow-lg shadow-slate-900/20 transition-all hover:-translate-y-0.5 hover:bg-slate-800 active:scale-95 dark:bg-slate-50 dark:text-slate-900 dark:hover:bg-white lg:bottom-6 lg:right-6"
+      aria-label="Back to top"
+      title="Back to top"
+    >
+      <ArrowUpIcon className="h-5 w-5" />
+    </button>
+  );
+}
+
 // Page frame used by the signed-in pages (feed + profile). With `rail`,
 // wide screens get the discovery rail beside a narrower centre column.
 export function AppShell({ children, rail = false }: { children: React.ReactNode; rail?: boolean }) {
   return (
     <div className="flex min-h-screen">
+      <a
+        href="#main-content"
+        className="sr-only z-50 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4 dark:bg-slate-50 dark:text-slate-900"
+      >
+        Skip to content
+      </a>
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar />
-        <div
-          className={`mx-auto w-full flex-1 px-4 pb-24 pt-4 sm:pt-6 lg:pb-10 ${
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className={`mx-auto w-full flex-1 px-4 pb-24 pt-4 outline-none sm:pt-6 lg:pb-10 ${
             rail ? "max-w-2xl" : "max-w-3xl"
           }`}
         >
           {children}
-        </div>
+        </main>
       </div>
       {rail && <RightRail />}
       <MobileNav />
+      <BackToTop />
     </div>
   );
 }
