@@ -3,9 +3,10 @@
 // Two layers use this same idea:
 //  1. This module runs in the browser and blocks abusive text instantly,
 //     before anything is sent to the database.
-//  2. migration_v8.sql installs the same check inside Postgres, so the
-//     database itself rejects abusive rows even if someone skips the app
-//     and calls the API directly.
+//  2. migration_v8.sql installs the same check inside Postgres (the word
+//     list was refreshed by migration_v10.sql), so the database itself
+//     rejects abusive rows even if someone skips the app and calls the
+//     API directly.
 //
 // How it works (kept deliberately simple and explainable):
 //  - Normalise the text: lowercase + common leetspeak swaps (f*ck, 5hit…).
@@ -23,13 +24,21 @@ const BLOCKED_WORDS: string[] = [
   "slut", "porn", "porno", "nigger", "nigga", "faggot", "retard",
   "cunt", "wanker", "boobs", "penis", "vagina", "sex", "sexy",
   "nude", "naked", "rape", "rapist", "pedophile", "incest",
+  "motherfucking", "fuckin", "arsehole", "dickhead", "shithead",
   // Hinglish / Hindi (roman script)
   "madarchod", "behenchod", "bhenchod", "bhosdike", "bhosdi", "chutiya",
   "chutiye", "gaand", "gand", "gandu", "harami", "haraami", "kamina",
   "kamine", "kutta", "kutti", "saala", "sala", "randi", "loda", "lode",
-  "lund", "lavda", "jhaant", "jhant", "bakchod", "bakchodi", "bhadwa",
-  "bhadwe", "chod", "chodu", "chudai", "muth", "mutthal", "tatte",
-  "ullu ka pattha", "haramkhor", "kaminey", "nalayak sala",
+  "lund", "lavda", "lawda", "lauda", "laude", "jhaant", "jhant",
+  "bakchod", "bakchodi", "bhadwa", "bhadwe", "chod", "chodu", "chudai",
+  "chud", "chuda", "chude", "chudi", "chudwa", "chudakkad", "chudail",
+  "chutiyapa", "muth", "mutthal", "tatte", "bhosda", "bhosde", "gaandu",
+  "behnchod", "kutiya", "haramzada", "haramzade", "haramzadi", "saali",
+  "maadarchod", "ullu ka pattha", "haramkhor", "kaminey", "nalayak sala",
+  // Devanagari script (the tokenizer below keeps Unicode letters, so
+  // abuse typed in Hindi script is checked as whole words too)
+  "चुद", "चूतिया", "चुदाई", "मादरचोद", "बहनचोद", "भोसडी", "गांड", "गाँडू",
+  "हरामी", "कमीना", "कुत्ता", "कुत्ती", "साला", "रंडी", "लौड़ा",
 ];
 
 const LEET: Record<string, string> = {
@@ -62,11 +71,20 @@ const BLOCKED_SET = new Set(BLOCKED_WORDS.map((w) => squeeze(w)));
 export function containsAbuse(raw: string): boolean {
   if (!raw) return false;
   const tokens = normalise(raw)
-    .split(/[^a-z]+/)
+    .split(/[^\p{L}\p{M}]+/u)
     .filter(Boolean);
 
   for (const token of tokens) {
     if (BLOCKED_SET.has(token) || BLOCKED_SET.has(squeeze(token))) {
+      return true;
+    }
+  }
+
+  // Multi-word phrases ("ullu ka pattha"): compare against the joined,
+  // squeezed token stream so disguised spellings are caught as well.
+  const joinedText = tokens.map(squeeze).join(" ");
+  for (const phrase of BLOCKED_WORDS) {
+    if (phrase.includes(" ") && joinedText.includes(squeeze(phrase))) {
       return true;
     }
   }
